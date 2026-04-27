@@ -143,6 +143,14 @@ function isPlainStream(k: StreamKey): boolean {
   return k.startsWith("bw_") || k.startsWith("color_");
 }
 
+function isBwPlain(k: StreamKey): boolean {
+  return k === "bw_a4" || k === "bw_a3";
+}
+
+function isColorPlain(k: StreamKey): boolean {
+  return k === "color_a4" || k === "color_a3";
+}
+
 function streamPaperSize(k: StreamKey): "A4" | "A3" | "A2" {
   if (k.endsWith("_a4")) return "A4";
   if (k.endsWith("_a3")) return "A3";
@@ -192,34 +200,40 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
     // Plan all file→stream contributions for this job
     const allPlans: FileStreamPlan[] = job.files.flatMap((f) => planFileStreams(f));
 
-    const plainStreamSet = new Set<StreamKey>(
-      allPlans.filter((p) => isPlainStream(p.streamKey)).map((p) => p.streamKey)
+    const bwPlainSet = new Set<StreamKey>(
+      allPlans.filter((p) => isBwPlain(p.streamKey)).map((p) => p.streamKey)
     );
     const allStreamSet = new Set(allPlans.map((p) => p.streamKey));
 
-    // Streams this job touches; if poster-only, synthesize a stub plain stream
-    // so the cover/tail boundary marker is still visible to the merchant.
+    // Streams this job touches. If the job has no BW plain content (e.g. all
+    // color or all poster), we synthesize a stub bw_a4 stream that carries
+    // ONLY the cover + tail — the boundary marker the merchant pairs with the
+    // colored / poster output via bin number.
     const jobStreams = new Set<StreamKey>(allStreamSet);
-    if (plainStreamSet.size === 0) {
-      jobStreams.add(fallbackCoverStream());
-    }
+    const stubBwForCover = bwPlainSet.size === 0 && allStreamSet.size > 0;
+    if (stubBwForCover) jobStreams.add(fallbackCoverStream());
 
     for (const streamKey of jobStreams) {
       const doc = await ensureStream(streamDocs, streamKey);
       const isPlain = isPlainStream(streamKey);
       const isDuplex = isPlain && getRoutedDuplex(printerConfig, streamKey);
       const paperSize = streamPaperSize(streamKey);
+      const isBw = isBwPlain(streamKey);
+      const isColor = isColorPlain(streamKey);
+      const isStubOnly = stubBwForCover && streamKey === fallbackCoverStream() && !allStreamSet.has(streamKey);
 
-      // ----- Cover (every plain stream gets its own boundary marker) -----
-      if (isPlain) {
+      // ----- Cover (BW plain streams + stubs only — saves color toner) -----
+      if (isBw) {
         const otherStreamLabels = [...allStreamSet]
           .filter((k) => k !== streamKey)
           .map((k) => humanStreamLabel(k));
 
-        const fileManifestForStream = mergeFileManifest(
-          allPlans.filter((p) => p.streamKey === streamKey),
-          job.files
-        );
+        const fileManifestForCover = isStubOnly
+          ? mergeFileManifest(allPlans, job.files) // stub: list everything
+          : mergeFileManifest(
+              allPlans.filter((p) => p.streamKey === streamKey),
+              job.files
+            );
 
         const coverBytes = await renderCoverPage({
           token: job.token,
@@ -229,7 +243,7 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
           slotTimeLabel: job.slotTimeLabel,
           shopName,
           streamLabel: humanStreamLabel(streamKey),
-          fileManifest: fileManifestForStream,
+          fileManifest: fileManifestForCover,
           otherStreams: otherStreamLabels,
           qrPayload: JSON.stringify({ token: job.token, jobId: job.id, batchId, stream: streamKey }),
         });
@@ -239,8 +253,11 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
         if (isDuplex) addBlankPage(doc, paperSize);
       }
 
-      // ----- Content for this stream -----
-      const plansForStream = allPlans.filter((p) => p.streamKey === streamKey);
+      // ----- Content (skip for stub-only streams) -----
+      const plansForStream = isStubOnly
+        ? []
+        : allPlans.filter((p) => p.streamKey === streamKey);
+
       for (const plan of plansForStream) {
         const file = job.files.find((f) => f.id === plan.fileId)!;
         const srcDoc = await PDFDocument.load(file.bytes);
@@ -257,7 +274,6 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
             orientation: plan.settings.orientation,
             interleaveBlankBack,
           });
-          // For DOUBLE in duplex stream: pad to even sheet count if odd
           if (isDuplex && plan.settings.sides === "DOUBLE") {
             const added = doc.getPageCount() - beforeCount;
             if (added % 2 !== 0) addBlankPage(doc, paperSize);
@@ -265,8 +281,8 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
         }
       }
 
-      // ----- Tail (every plain stream gets its own) -----
-      if (isPlain) {
+      // ----- Tail (BW plain only — same toner-saving rule) -----
+      if (isBw) {
         const tailBytes = await renderTailPage({
           token: job.token,
           studentName: job.studentName,
@@ -278,8 +294,17 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
         doc.addPage(tailPage);
         if (isDuplex) addBlankPage(doc, paperSize);
 
-        // Pad to even sheet boundary so next job starts on a fresh sheet
         if (isDuplex && doc.getPageCount() % 2 !== 0) addBlankPage(doc, paperSize);
+      }
+
+      // ----- Color stream separator: blank between jobs (no cover, no tail) -----
+      // Saves color toner; merchant uses BW stream cover/tail + bin number to pair.
+      if (isColor && plansForStream.length > 0) {
+        // Pad to even sheet boundary first if duplex
+        if (isDuplex && doc.getPageCount() % 2 !== 0) addBlankPage(doc, paperSize);
+        // One blank separator (full sheet if duplex = 2 pages)
+        addBlankPage(doc, paperSize);
+        if (isDuplex) addBlankPage(doc, paperSize);
       }
 
       // Track contribution counts for the manifest
