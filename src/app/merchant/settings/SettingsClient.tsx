@@ -283,6 +283,7 @@ export function SettingsClient({
           updatePrinter={updatePrinter}
           removePrinter={removePrinter}
           addPrinter={addPrinter}
+          routing={routing}
         />
 
         <RoutingSection
@@ -446,99 +447,138 @@ function PrintersSection({
   updatePrinter,
   removePrinter,
   addPrinter,
+  routing,
 }: {
   printers: Printer[];
   updatePrinter: (idx: number, patch: Partial<Printer>) => void;
   removePrinter: (idx: number) => void;
   addPrinter: () => void;
+  routing: Record<StreamKey, string>;
 }) {
+  function confirmRemove(idx: number) {
+    const p = printers[idx];
+    const usingStreams = (Object.entries(routing) as [StreamKey, string][])
+      .filter(([, pid]) => pid === p.id)
+      .map(([k]) => humanStreamLabel(k));
+    const warn = usingStreams.length
+      ? `\n\nWARNING: ${usingStreams.length} stream${usingStreams.length === 1 ? "" : "s"} currently route to this printer:\n${usingStreams.join("\n")}\n\nReassign them in Stream Routing before saving.`
+      : "";
+    if (window.confirm(`Remove "${p.label}"?${warn}`)) {
+      removePrinter(idx);
+    }
+  }
+
   return (
     <Card>
-      <CardHeader className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Printers</h2>
+      <CardHeader className="flex flex-col sm:flex-row gap-2 sm:justify-between sm:items-center">
+        <div>
+          <h2 className="text-xl font-bold">Printers</h2>
+          <p className="text-xs text-ink/60 mt-1">{printers.length} configured</p>
+        </div>
         <Button variant="secondary" onClick={addPrinter} size="sm">
           + Add printer
         </Button>
       </CardHeader>
       <CardBody className="space-y-4">
         {printers.length === 0 && (
-          <p className="text-sm text-ink/60">No printers configured.</p>
+          <p className="text-sm text-ink/60">No printers configured. Click "Add printer" to begin.</p>
         )}
-        {printers.map((p, idx) => (
-          <div key={p.id} className="hairline p-4 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label>Label</Label>
-                <Input
-                  value={p.label}
-                  onChange={(e) => updatePrinter(idx, { label: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>ID</Label>
-                <Input
-                  value={p.id}
-                  onChange={(e) => updatePrinter(idx, { id: e.target.value })}
-                />
-              </div>
-              <div className="flex items-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removePrinter(idx)}
+        {printers.map((p, idx) => {
+          const usedBy = (Object.entries(routing) as [StreamKey, string][])
+            .filter(([, pid]) => pid === p.id).length;
+          return (
+            <div key={idx} className="hairline p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="smallcaps text-ink/60 mb-1">Printer #{idx + 1}</div>
+                  <div className="font-mono text-sm truncate">{p.id}</div>
+                  {usedBy > 0 && (
+                    <div className="smallcaps text-accent mt-1">
+                      In use by {usedBy} stream{usedBy === 1 ? "" : "s"}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => confirmRemove(idx)}
+                  className="smallcaps text-status-failed hover:underline min-h-11 px-2 cursor-pointer"
+                  aria-label={`Remove printer ${p.label}`}
                 >
-                  Remove
-                </Button>
+                  Delete
+                </button>
               </div>
-            </div>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <Toggle
-                label="Color"
-                value={p.supports_color}
-                onChange={(v) => updatePrinter(idx, { supports_color: v })}
-              />
-              <Toggle
-                label="Duplex"
-                value={p.supports_duplex}
-                onChange={(v) => updatePrinter(idx, { supports_duplex: v })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Paper types</Label>
-              <div className="flex flex-wrap gap-2">
-                {PAPER_TYPES.map((t) => (
-                  <PillToggle
-                    key={t}
-                    label={t}
-                    on={p.supported_paper_types.includes(t)}
-                    onClick={() =>
-                      updatePrinter(idx, {
-                        supported_paper_types: toggleArr(p.supported_paper_types, t),
-                      })
-                    }
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Label (shown to merchant)</Label>
+                  <Input
+                    value={p.label}
+                    onChange={(e) => updatePrinter(idx, { label: e.target.value })}
+                    placeholder="HP LaserJet Pro M283"
                   />
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Paper sizes</Label>
-              <div className="flex flex-wrap gap-2">
-                {PAPER_SIZES.map((s) => (
-                  <PillToggle
-                    key={s}
-                    label={s}
-                    on={p.supported_paper_sizes.includes(s)}
-                    onClick={() =>
-                      updatePrinter(idx, {
-                        supported_paper_sizes: toggleArr(p.supported_paper_sizes, s),
-                      })
+                </div>
+                <div className="space-y-2">
+                  <Label>Internal ID</Label>
+                  <Input
+                    value={p.id}
+                    onChange={(e) =>
+                      updatePrinter(idx, { id: e.target.value.replace(/\s+/g, "-").toLowerCase() })
                     }
+                    placeholder="p1"
                   />
-                ))}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-4 text-sm">
+                <Toggle
+                  label="Color"
+                  value={p.supports_color}
+                  onChange={(v) => updatePrinter(idx, { supports_color: v })}
+                />
+                <Toggle
+                  label="Duplex"
+                  value={p.supports_duplex}
+                  onChange={(v) => updatePrinter(idx, { supports_duplex: v })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Paper types</Label>
+                <div className="flex flex-wrap gap-2">
+                  {PAPER_TYPES.map((t) => (
+                    <PillToggle
+                      key={t}
+                      label={t}
+                      on={p.supported_paper_types.includes(t)}
+                      onClick={() =>
+                        updatePrinter(idx, {
+                          supported_paper_types: toggleArr(p.supported_paper_types, t),
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Paper sizes</Label>
+                <div className="flex flex-wrap gap-2">
+                  {PAPER_SIZES.map((s) => (
+                    <PillToggle
+                      key={s}
+                      label={s}
+                      on={p.supported_paper_sizes.includes(s)}
+                      onClick={() =>
+                        updatePrinter(idx, {
+                          supported_paper_sizes: toggleArr(p.supported_paper_sizes, s),
+                        })
+                      }
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </CardBody>
     </Card>
   );
