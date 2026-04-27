@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,14 @@ import { CMYKBar } from "@/components/CMYKBar";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 
 export default function MerchantLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <MerchantLoginInner />
+    </Suspense>
+  );
+}
+
+function MerchantLoginInner() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") ?? "/merchant/dashboard";

@@ -1,15 +1,19 @@
 import withPWAInit from "next-pwa";
 
+// Disable PWA on Vercel build for now — next-pwa@5.6.0 has known incompat
+// with Next 14.2 + pnpm hoisting. Re-enable after migrating to @serwist/next.
+const PWA_ENABLED = process.env.PWA_ENABLED === "true";
+
 const withPWA = withPWAInit({
   dest: "public",
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
-  fallbacks: { document: "/offline" },
+  disable: !PWA_ENABLED || process.env.NODE_ENV === "development",
   runtimeCaching: [
     {
       urlPattern: /^\/api\/payment\/.*$/,
       handler: "NetworkOnly",
+      options: { cacheName: "no-cache" },
     },
     {
       urlPattern: /^\/api\/(jobs|shops|slots)\/.*$/,

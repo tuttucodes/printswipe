@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -15,6 +15,14 @@ interface ShopOption {
 }
 
 export default function NewJobShopPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewJobShopInner />
+    </Suspense>
+  );
+}
+
+function NewJobShopInner() {
   const [shops, setShops] = useState<ShopOption[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();

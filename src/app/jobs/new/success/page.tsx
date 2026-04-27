@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
@@ -54,6 +54,14 @@ function buildIcs(opts: {
 }
 
 export default function NewJobSuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewJobSuccessInner />
+    </Suspense>
+  );
+}
+
+function NewJobSuccessInner() {
   const params = useSearchParams();
   const token = params.get("token") ?? "";
   const jobId = params.get("jobId") ?? "";
