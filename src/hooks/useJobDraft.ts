@@ -48,7 +48,7 @@ export function defaultSettings(pageCount: number): FileSettings {
     layout: 1 as Layout,
     copies: 1,
     pageRangeSpec: null,
-    orientation: "AUTO" as Orientation,
+    orientation: "PORTRAIT" as Orientation,
     pageCount,
   };
 }

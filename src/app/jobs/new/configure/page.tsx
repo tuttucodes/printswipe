@@ -11,7 +11,7 @@ import { CMYKBar } from "@/components/CMYKBar";
 import { Wordmark } from "@/components/Wordmark";
 import { PriceDisplay } from "@/components/PriceDisplay";
 import { priceForFile } from "@/lib/pricing";
-import { PricingConfigSchema, parseRangeSpec } from "@/lib/validation";
+import { PricingConfigSchema, parseRangeSpec, tryParseRangeSpec } from "@/lib/validation";
 import type {
   ColorMode,
   FileSettings,
@@ -244,7 +244,7 @@ function FileConfigEditor({ settings, duplexCapable, onChange }: FileConfigEdito
         sides: "SINGLE",
         layout: 1,
         colorMode: settings.colorMode === "MIXED" ? "ALL_COLOR" : settings.colorMode,
-        orientation: "AUTO",
+        orientation: "PORTRAIT",
       });
     } else {
       onChange({
@@ -296,12 +296,29 @@ function FileConfigEditor({ settings, duplexCapable, onChange }: FileConfigEdito
       </Field>
 
       {settings.colorMode === "MIXED" && (
-        <Field label="Color pages">
+        <Field label={`Color pages (of ${settings.pageCount})`}>
           <Input
             placeholder="1, 3, 7-9"
             value={settings.colorPagesSpec ?? ""}
             onChange={(e) => onChange({ colorPagesSpec: e.target.value })}
+            aria-invalid={(() => {
+              const r = tryParseRangeSpec(settings.colorPagesSpec ?? null, settings.pageCount);
+              return !r.ok;
+            })()}
           />
+          {(() => {
+            const r = tryParseRangeSpec(settings.colorPagesSpec ?? null, settings.pageCount);
+            if (!r.ok) {
+              return (
+                <p className="text-xs text-status-failed font-mono mt-2">{r.error}</p>
+              );
+            }
+            return (
+              <p className="text-xs text-ink/60 font-mono mt-2 num">
+                {r.pages.length} color · {settings.pageCount - r.pages.length} B&amp;W
+              </p>
+            );
+          })()}
         </Field>
       )}
 
@@ -355,19 +372,40 @@ function FileConfigEditor({ settings, duplexCapable, onChange }: FileConfigEdito
         </div>
       </Field>
 
-      <Field label="Page Range">
+      <Field label={`Page Range (of ${settings.pageCount})`}>
         <Input
           placeholder="All (or e.g. 1-5, 8)"
           value={settings.pageRangeSpec ?? ""}
           onChange={(e) => onChange({ pageRangeSpec: e.target.value || null })}
+          aria-invalid={(() => {
+            if (!settings.pageRangeSpec) return false;
+            return !tryParseRangeSpec(settings.pageRangeSpec, settings.pageCount).ok;
+          })()}
         />
+        {(() => {
+          if (!settings.pageRangeSpec) {
+            return (
+              <p className="text-xs text-ink/60 font-mono mt-2 num">
+                All {settings.pageCount} page{settings.pageCount === 1 ? "" : "s"} will be printed.
+              </p>
+            );
+          }
+          const r = tryParseRangeSpec(settings.pageRangeSpec, settings.pageCount);
+          if (!r.ok) {
+            return <p className="text-xs text-status-failed font-mono mt-2">{r.error}</p>;
+          }
+          return (
+            <p className="text-xs text-ink/60 font-mono mt-2 num">
+              {r.pages.length} page{r.pages.length === 1 ? "" : "s"} selected.
+            </p>
+          );
+        })()}
       </Field>
 
       {!isPoster && (
         <Field label="Orientation">
           <RadioRow
             options={[
-              { value: "AUTO", label: "Auto" },
               { value: "PORTRAIT", label: "Portrait" },
               { value: "LANDSCAPE", label: "Landscape" },
             ]}

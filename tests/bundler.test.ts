@@ -138,7 +138,7 @@ describe("bundler — 10 edge cases", () => {
     expect(poster.isDuplex).toBe(false);
   });
 
-  it("7. source PDF non-A4 dimensions normalized via 1-up AUTO → still appended", async () => {
+  it("7. source PDF non-A4 dimensions normalized via 1-up PORTRAIT → still appended", async () => {
     // Build an A3-sized source but ask for A4 paper
     const src = await PDFDocument.create();
     const p = src.addPage([842, 1191]); // A3
@@ -159,7 +159,7 @@ describe("bundler — 10 edge cases", () => {
         copies: 1,
         pageRangeSpec: null,
         colorPagesSpec: null,
-        orientation: "AUTO" as const,
+        orientation: "PORTRAIT" as const,
         pageCount: 1,
       },
     };

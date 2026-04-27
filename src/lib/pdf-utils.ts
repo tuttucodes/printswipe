@@ -30,8 +30,8 @@ export async function appendWithLayout(opts: {
   const { destDoc, srcDoc, srcIndices, layout, paperSize, orientation, interleaveBlankBack } = opts;
   if (srcIndices.length === 0) return 0;
 
-  // 1-up + AUTO: direct copy preserves source dimensions
-  if (layout === 1 && orientation === "AUTO") {
+  // 1-up portrait: direct copy preserves source dimensions when matching paper
+  if (layout === 1 && orientation === "PORTRAIT") {
     const copied = await destDoc.copyPages(srcDoc, srcIndices);
     let n = 0;
     for (const p of copied) {

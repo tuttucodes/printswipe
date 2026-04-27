@@ -14,7 +14,7 @@ export type Sides = (typeof Sides)[keyof typeof Sides];
 
 export type Layout = 1 | 2 | 4 | 6;
 
-export const Orientation = { AUTO: "AUTO", PORTRAIT: "PORTRAIT", LANDSCAPE: "LANDSCAPE" } as const;
+export const Orientation = { PORTRAIT: "PORTRAIT", LANDSCAPE: "LANDSCAPE" } as const;
 export type Orientation = (typeof Orientation)[keyof typeof Orientation];
 
 export type JobStatus =

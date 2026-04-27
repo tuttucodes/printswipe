@@ -3,6 +3,7 @@ import { Wordmark } from "@/components/Wordmark";
 import { CMYKBar } from "@/components/CMYKBar";
 import { Button } from "@/components/ui/button";
 import { RegistrationMark } from "@/components/RegistrationMark";
+import { Footer } from "@/components/Footer";
 
 export default function LandingPage() {
   return (
@@ -51,10 +52,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="container py-8 hairline-t mt-auto smallcaps text-ink/60 flex justify-between">
-        <span>printswipe.in</span>
-        <span>made for indian campuses</span>
-      </footer>
+      <Footer />
     </main>
   );
 }

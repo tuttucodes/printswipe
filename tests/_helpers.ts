@@ -43,7 +43,7 @@ export function defaultSettings(over: Partial<FileSettings> = {}): FileSettings 
     copies: 1,
     pageRangeSpec: null,
     colorPagesSpec: null,
-    orientation: "AUTO",
+    orientation: "PORTRAIT",
     pageCount: 1,
     ...over,
   };
