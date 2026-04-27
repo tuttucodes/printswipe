@@ -26,6 +26,7 @@ export async function middleware(req: NextRequest) {
   const isPublic =
     path === "/" ||
     path.startsWith("/login") ||
+    path.startsWith("/auth/callback") ||
     path.startsWith("/merchant/login") ||
     path.startsWith("/api/payment/webhook") ||
     path.startsWith("/_next") ||

@@ -1,19 +1,31 @@
-import { LoginClient } from "./LoginClient";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { LoginClient } from "./LoginClient";
 
-export default async function LoginPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: { error?: string; email?: string };
+}) {
   const sb = createClient();
-  const { data: { user } } = await sb.auth.getUser();
-  if (user) {
-    // already logged in → home
-    const { redirect } = await import("next/navigation");
-    redirect("/home");
-  }
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (user) redirect("/home");
 
   const { data: campuses } = await sb
     .from("campuses")
-    .select("id, name, city, allowed_email_domains")
+    .select("name, allowed_email_domains")
+    .eq("is_active", true)
     .order("name");
 
-  return <LoginClient campuses={campuses ?? []} />;
+  return (
+    <LoginClient
+      supportedCampuses={campuses ?? []}
+      errorCode={searchParams.error ?? null}
+      attemptedEmail={searchParams.email ?? null}
+    />
+  );
 }
