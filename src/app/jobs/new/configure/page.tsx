@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { CMYKBar } from "@/components/CMYKBar";
 import { Wordmark } from "@/components/Wordmark";
 import { PriceDisplay } from "@/components/PriceDisplay";
+import { PrintPreview } from "@/components/PrintPreview";
 import { priceForFile } from "@/lib/pricing";
 import { PricingConfigSchema, parseRangeSpec, tryParseRangeSpec } from "@/lib/validation";
 import type {
@@ -55,6 +56,7 @@ export default function NewJobConfigurePage() {
   const [shopCfg, setShopCfg] = useState<ShopConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(files[0]?.id ?? null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!shopId) router.push("/jobs/new/shop");
@@ -187,6 +189,15 @@ export default function NewJobConfigurePage() {
                         <span className="smallcaps text-ink/60">{open ? "Hide" : "Edit"}</span>
                       </div>
                     </button>
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setPreviewId(f.id); }}
+                        className="smallcaps text-ink/60 hover:text-accent transition-colors min-h-9 px-2 cursor-pointer"
+                      >
+                        ⌘ Preview
+                      </button>
+                    </div>
                   </CardHeader>
                   {open && (
                     <CardBody className="grid gap-5">
@@ -223,6 +234,19 @@ export default function NewJobConfigurePage() {
           </Button>
         </div>
       </div>
+
+      {previewId && (() => {
+        const f = files.find((x) => x.id === previewId);
+        if (!f) return null;
+        return (
+          <PrintPreview
+            open
+            filename={f.filename}
+            settings={f.settings}
+            onClose={() => setPreviewId(null)}
+          />
+        );
+      })()}
     </main>
   );
 }
