@@ -28,7 +28,7 @@ export interface TailInput {
   qrPayload: string;
 }
 
-const ACCENT = rgb(239 / 255, 51 / 255, 64 / 255);
+// Covers + tails render in pure ink so color streams print covers on B&W toner.
 const INK = rgb(0.04, 0.04, 0.04);
 
 async function pngFromQr(payload: string): Promise<Uint8Array> {
@@ -85,9 +85,9 @@ export async function renderCoverPage(input: CoverInput): Promise<Uint8Array> {
     page.drawText(input.studentPhoneMasked, { x: 40, y: 352, size: 11, font: courier, color: INK });
   }
 
-  // Bin badge
+  // Bin badge — black fill, white text (prints with B&W toner only)
   const badgeY = 280, badgeH = 70, badgeW = 280, badgeX = (524 - badgeW) / 2;
-  page.drawRectangle({ x: badgeX, y: badgeY, width: badgeW, height: badgeH, color: ACCENT });
+  page.drawRectangle({ x: badgeX, y: badgeY, width: badgeW, height: badgeH, color: INK });
   const binText = `BIN ${input.binNumber}`;
   const binW = courierBold.widthOfTextAtSize(binText, 44);
   page.drawText(binText, {
@@ -179,7 +179,7 @@ export async function renderTailPage(input: TailInput): Promise<Uint8Array> {
   page.drawText(binText, {
     x: (524 - binW) / 2,
     y: 500,
-    size: 28, font: courierBold, color: ACCENT,
+    size: 28, font: courierBold, color: INK,
   });
 
   // QR (smaller)

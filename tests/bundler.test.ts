@@ -83,11 +83,11 @@ describe("bundler — 10 edge cases", () => {
     });
     const keys = out.streams.map((s) => s.key).sort();
     expect(keys).toEqual(["bw_a4", "color_a4"].sort());
-    // Cover/tail go on bw_a4 (cover host = first plain in priority order).
-    // color_a4 gets only content: 3 pages DOUBLE → pad to 4.
+    // Every plain stream gets its own cover + tail (B&W ink only).
+    // color_a4: cover(2) + 3 pages + (pad 1) + tail(2) = 8
     const colorStream = out.streams.find((s) => s.key === "color_a4")!;
-    expect(colorStream.pageCount).toBe(4);
-    // bw_a4 has cover(2) + 7 bw pages + (pad 1) + tail(2) = 12
+    expect(colorStream.pageCount).toBe(8);
+    // bw_a4: cover(2) + 7 pages + (pad 1) + tail(2) = 12
     const bwStream = out.streams.find((s) => s.key === "bw_a4")!;
     expect(bwStream.pageCount).toBe(12);
   });

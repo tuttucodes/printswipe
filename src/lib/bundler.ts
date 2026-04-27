@@ -160,14 +160,17 @@ function streamColorBucket(k: StreamKey): "color" | "bw" | "mixed" {
 }
 
 // =========================================================================
-// Cover-host selection (poster covers go on plain stream)
+// Cover stream selection
 // =========================================================================
+//
+// Every plain stream a job touches gets its own cover + tail in pure ink.
+// Posters never carry covers (don't waste glossy paper).
+// If a job is poster-only, we synthesize a stub bw_a4 stream just for the
+// boundary marker so the merchant can pair it with the poster output.
 
-/** Pick a host stream for a job's cover/tail pages. Posters never carry covers. */
-export function pickCoverHostStream(jobStreams: Set<StreamKey>): StreamKey {
-  const plainPriority: StreamKey[] = ["bw_a4", "color_a4", "bw_a3", "color_a3"];
-  for (const k of plainPriority) if (jobStreams.has(k)) return k;
-  // Poster-only job: synthesize stub bw_a4
+const PLAIN_PRIORITY: readonly StreamKey[] = ["bw_a4", "color_a4", "bw_a3", "color_a3"];
+
+export function fallbackCoverStream(): StreamKey {
   return "bw_a4";
 }
 
@@ -189,31 +192,31 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
     // Plan all file→stream contributions for this job
     const allPlans: FileStreamPlan[] = job.files.flatMap((f) => planFileStreams(f));
 
-    // Real plain streams this job contributes to (used to pick cover host)
     const plainStreamSet = new Set<StreamKey>(
       allPlans.filter((p) => isPlainStream(p.streamKey)).map((p) => p.streamKey)
     );
     const allStreamSet = new Set(allPlans.map((p) => p.streamKey));
-    const coverHost = pickCoverHostStream(plainStreamSet);
 
-    // Streams this job touches (real). If poster-only, also synthesize cover host.
+    // Streams this job touches; if poster-only, synthesize a stub plain stream
+    // so the cover/tail boundary marker is still visible to the merchant.
     const jobStreams = new Set<StreamKey>(allStreamSet);
-    jobStreams.add(coverHost);
+    if (plainStreamSet.size === 0) {
+      jobStreams.add(fallbackCoverStream());
+    }
 
     for (const streamKey of jobStreams) {
       const doc = await ensureStream(streamDocs, streamKey);
-      const isCoverHost = streamKey === coverHost;
       const isPlain = isPlainStream(streamKey);
       const isDuplex = isPlain && getRoutedDuplex(printerConfig, streamKey);
       const paperSize = streamPaperSize(streamKey);
 
-      // ----- Cover (only on plain streams that host the cover) -----
-      if (isCoverHost && isPlain) {
+      // ----- Cover (every plain stream gets its own boundary marker) -----
+      if (isPlain) {
         const otherStreamLabels = [...allStreamSet]
           .filter((k) => k !== streamKey)
           .map((k) => humanStreamLabel(k));
 
-        const fileManifestForHost = mergeFileManifest(
+        const fileManifestForStream = mergeFileManifest(
           allPlans.filter((p) => p.streamKey === streamKey),
           job.files
         );
@@ -226,9 +229,9 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
           slotTimeLabel: job.slotTimeLabel,
           shopName,
           streamLabel: humanStreamLabel(streamKey),
-          fileManifest: fileManifestForHost,
+          fileManifest: fileManifestForStream,
           otherStreams: otherStreamLabels,
-          qrPayload: JSON.stringify({ token: job.token, jobId: job.id, batchId }),
+          qrPayload: JSON.stringify({ token: job.token, jobId: job.id, batchId, stream: streamKey }),
         });
         const coverDoc = await PDFDocument.load(coverBytes);
         const [coverPage] = await doc.copyPages(coverDoc, [0]);
@@ -262,8 +265,8 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
         }
       }
 
-      // ----- Tail (only on cover-host plain stream) -----
-      if (isCoverHost && isPlain) {
+      // ----- Tail (every plain stream gets its own) -----
+      if (isPlain) {
         const tailBytes = await renderTailPage({
           token: job.token,
           studentName: job.studentName,
