@@ -168,19 +168,20 @@ export default function NewJobConfigurePage() {
             return (
               <li key={f.id}>
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="!p-4 sm:!p-5">
                     <button
+                      type="button"
                       onClick={() => setOpenId(open ? null : f.id)}
-                      className="flex w-full items-center justify-between gap-3"
+                      className="flex flex-col sm:flex-row w-full items-start sm:items-center sm:justify-between gap-3 text-left"
                     >
-                      <div className="text-left min-w-0">
+                      <div className="min-w-0 w-full">
                         <div className="font-mono text-sm font-bold truncate">{f.filename}</div>
                         <div className="font-mono text-xs text-ink/60 num mt-1">
                           {f.pageCount} pages · {f.settings.paperType === "POSTER_GLOSSY" ? "Poster" : "Plain"}{" "}
                           {f.settings.paperSize} · ×{f.settings.copies}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex items-center gap-3 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
                         {priceErr ? (
                           <span className="font-mono text-xs text-accent">err</span>
                         ) : (
@@ -189,7 +190,7 @@ export default function NewJobConfigurePage() {
                         <span className="smallcaps text-ink/60">{open ? "Hide" : "Edit"}</span>
                       </div>
                     </button>
-                    <div className="mt-3 flex justify-end">
+                    <div className="mt-2 flex justify-end">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setPreviewId(f.id); }}
@@ -218,17 +219,18 @@ export default function NewJobConfigurePage() {
         </ul>
       </section>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-paper hairline-t z-30">
-        <div className="container py-4 flex items-center justify-between gap-4">
-          <div>
+      <div className="fixed bottom-0 left-0 right-0 bg-paper hairline-t z-30 pb-[env(safe-area-inset-bottom)]">
+        <div className="container py-3 sm:py-4 flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3 min-w-0">
             <span className="smallcaps text-ink/60">Estimate</span>
-            <PriceDisplay paise={total} size="md" className="ml-3" />
+            <PriceDisplay paise={total} size="md" />
           </div>
           <Button
             variant="accent"
             size="lg"
             disabled={!allValid}
             onClick={() => router.push("/jobs/new/review")}
+            className="shrink-0"
           >
             Review
           </Button>
@@ -378,18 +380,22 @@ function FileConfigEditor({ settings, duplexCapable, onChange }: FileConfigEdito
         <div className="flex items-center gap-3">
           <button
             type="button"
+            aria-label="Decrease copies"
             onClick={() => onChange({ copies: Math.max(1, settings.copies - 1) })}
-            className="w-10 h-10 hairline font-mono"
+            disabled={settings.copies <= 1}
+            className="w-11 h-11 hairline font-mono text-lg disabled:opacity-30"
           >
             −
           </button>
-          <span className="font-mono num font-bold text-xl w-10 text-center">
+          <span className="font-mono num font-bold text-xl w-12 text-center" aria-live="polite">
             {settings.copies}
           </span>
           <button
             type="button"
+            aria-label="Increase copies"
             onClick={() => onChange({ copies: Math.min(50, settings.copies + 1) })}
-            className="w-10 h-10 hairline font-mono"
+            disabled={settings.copies >= 50}
+            className="w-11 h-11 hairline font-mono text-lg disabled:opacity-30"
           >
             +
           </button>
@@ -477,7 +483,7 @@ function RadioRow({
             disabled={o.disabled}
             onClick={() => !o.disabled && onChange(o.value)}
             className={cn(
-              "hairline px-3 py-2 font-mono text-sm transition-colors",
+              "hairline px-3 min-h-11 flex items-center font-mono text-sm transition-colors",
               active && !o.disabled && "bg-ink text-paper",
               !active && !o.disabled && "hover:bg-ink/5",
               o.disabled && "opacity-30 cursor-not-allowed"
