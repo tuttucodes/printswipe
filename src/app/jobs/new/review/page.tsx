@@ -51,7 +51,7 @@ export default function NewJobReviewPage() {
   const [bypassEnabled, setBypassEnabled] = useState(false);
 
   useEffect(() => {
-    fetch("/api/payment/dev-bypass")
+    fetch("/api/payment/dev-bypass", { cache: "no-store" })
       .then((r) => r.json())
       .then((j) => setBypassEnabled(Boolean(j?.enabled)))
       .catch(() => {});

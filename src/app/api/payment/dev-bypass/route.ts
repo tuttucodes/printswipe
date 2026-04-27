@@ -8,6 +8,8 @@ import { FileSettingsSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 /**
  * DEV-ONLY shortcut for the full payment loop.
@@ -131,5 +133,13 @@ export async function POST(req: Request) {
 
 // Public read so the client knows whether to show the bypass button.
 export async function GET() {
-  return NextResponse.json({ enabled: process.env.DEV_PAYMENT_BYPASS === "true" });
+  return NextResponse.json(
+    { enabled: process.env.DEV_PAYMENT_BYPASS === "true" },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+        "CDN-Cache-Control": "no-store",
+      },
+    }
+  );
 }
