@@ -17,10 +17,10 @@ const Body = z.object({
   shopId: z.string().uuid(),
   slotTime: z.string(),
   files: z.array(
-    FileSettingsSchema.extend({
-      filename: z.string(),
-      storagePath: z.string(),
-    })
+    z.intersection(
+      FileSettingsSchema,
+      z.object({ filename: z.string(), storagePath: z.string() })
+    )
   ).min(1),
   notes: z.string().nullable().optional(),
 });

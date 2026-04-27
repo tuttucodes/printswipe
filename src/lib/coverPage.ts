@@ -1,6 +1,12 @@
-import { PDFDocument, StandardFonts, rgb, PDFFont } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage } from "pdf-lib";
 import QRCode from "qrcode";
 import { drawBoundaryBands, PAGE_DIMS } from "./pdf-utils";
+
+// pdf-lib supports characterSpacing at runtime but its TS types omit it.
+type DrawTextOpts = Parameters<PDFPage["drawText"]>[1] & { characterSpacing?: number };
+function drawText(page: PDFPage, text: string, opts: DrawTextOpts) {
+  return page.drawText(text, opts as Parameters<PDFPage["drawText"]>[1]);
+}
 
 export interface CoverInput {
   token: string;
@@ -43,12 +49,12 @@ export async function renderCoverPage(input: CoverInput): Promise<Uint8Array> {
   const courierBold = await doc.embedFont(StandardFonts.CourierBold);
 
   // Wordmark
-  page.drawText("PRINTSWIPE", { x: 40, y: 770, size: 12, font: courierBold, color: INK, characterSpacing: 4 });
+  drawText(page, "PRINTSWIPE", { x: 40, y: 770, size: 12, font: courierBold, color: INK, characterSpacing: 4 });
   page.drawLine({ start: { x: 40, y: 760 }, end: { x: 524, y: 760 }, color: INK, thickness: 0.7 });
 
   // Token block
   const tokenLabel = "TOKEN";
-  page.drawText(tokenLabel, {
+  drawText(page, tokenLabel, {
     x: (595 - helv.widthOfTextAtSize(tokenLabel, 10)) / 2,
     y: 720,
     size: 10,
@@ -72,10 +78,10 @@ export async function renderCoverPage(input: CoverInput): Promise<Uint8Array> {
   page.drawImage(qrImg, { x: (524 - qrSize) / 2, y: 440, width: qrSize, height: qrSize });
 
   // Student
-  page.drawText("STUDENT", { x: 40, y: 410, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
+  drawText(page, "STUDENT", { x: 40, y: 410, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
   page.drawText(input.studentName, { x: 40, y: 388, size: 18, font: helvBold, color: INK });
   if (input.studentPhoneMasked) {
-    page.drawText("PHONE", { x: 40, y: 368, size: 8, font: helvBold, color: INK, characterSpacing: 2.5 });
+    drawText(page, "PHONE", { x: 40, y: 368, size: 8, font: helvBold, color: INK, characterSpacing: 2.5 });
     page.drawText(input.studentPhoneMasked, { x: 40, y: 352, size: 11, font: courier, color: INK });
   }
 
@@ -93,15 +99,15 @@ export async function renderCoverPage(input: CoverInput): Promise<Uint8Array> {
   });
 
   // Stream
-  page.drawText("STREAM", { x: 40, y: 250, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
+  drawText(page, "STREAM", { x: 40, y: 250, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
   page.drawText(input.streamLabel, { x: 40, y: 232, size: 14, font: helvBold, color: INK });
 
   // Shop / slot
-  page.drawText("SHOP", { x: 40, y: 210, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
+  drawText(page, "SHOP", { x: 40, y: 210, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
   page.drawText(`${input.shopName} · ${input.slotTimeLabel}`, { x: 40, y: 195, size: 10, font: helv, color: INK });
 
   // File manifest
-  page.drawText("IN THIS STACK", { x: 40, y: 175, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
+  drawText(page, "IN THIS STACK", { x: 40, y: 175, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
   let y = 158;
   for (const f of input.fileManifest.slice(0, 8)) {
     drawClipped(page, helv, `• ${f.filename} — ${f.pageCount} ${f.pageCount === 1 ? "page" : "pages"}`, 40, y, 10, 460);
@@ -110,7 +116,7 @@ export async function renderCoverPage(input: CoverInput): Promise<Uint8Array> {
 
   if (input.otherStreams.length) {
     y -= 5;
-    page.drawText(`ALSO IN BIN ${input.binNumber}`, { x: 40, y, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
+    drawText(page, `ALSO IN BIN ${input.binNumber}`, { x: 40, y, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
     y -= 13;
     for (const s of input.otherStreams.slice(0, 4)) {
       drawClipped(page, helv, `• ${s}`, 40, y, 10, 460);
@@ -148,7 +154,7 @@ export async function renderTailPage(input: TailInput): Promise<Uint8Array> {
     size: 12, font: helvBold, color: INK,
   });
 
-  page.drawText("END OF TOKEN", {
+  drawText(page, "END OF TOKEN", {
     x: (524 - helvBold.widthOfTextAtSize("END OF TOKEN", 12)) / 2,
     y: 660,
     size: 12, font: helvBold, color: INK, characterSpacing: 3,
@@ -189,7 +195,7 @@ export async function renderTailPage(input: TailInput): Promise<Uint8Array> {
     size: 12, font: helv, color: INK,
   });
 
-  page.drawText("PRINTSWIPE", {
+  drawText(page, "PRINTSWIPE", {
     x: 40, y: 50, size: 9, font: helvBold, color: INK, characterSpacing: 4,
   });
 

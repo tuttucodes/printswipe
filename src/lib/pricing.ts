@@ -32,7 +32,7 @@ export function resolvePageBuckets(s: FileSettings): { color: number; bw: number
 function plainPerSidePaise(pricing: PricingConfig, color: "color" | "bw", size: "A4" | "A3", duplex: boolean): number {
   const base = pricing.plain[color][size];
   if (!duplex) return base;
-  const discounted = base * (1 - pricing.plain ? pricing.duplex_discount_percent / 100 : 0);
+  const discounted = base * (1 - pricing.duplex_discount_percent / 100);
   return Math.max(0, discounted);
 }
 
