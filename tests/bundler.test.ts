@@ -49,16 +49,11 @@ describe("bundler — 10 edge cases", () => {
       jobs: [job],
       binAssignments: { j1: 2 },
     });
-    // Color stream now has NO cover/tail (saves color toner). Stub bw_a4
-    // carries cover+tail. Color stream has content + blank separator.
-    const keys = out.streams.map((s) => s.key).sort();
-    expect(keys).toEqual(["bw_a4", "color_a4"].sort());
-    // color_a4: 3 single-sided pages + interleaved blanks = 6 + separator(2) = 8
-    const colorStream = out.streams.find((s) => s.key === "color_a4")!;
-    expect(colorStream.pageCount).toBe(8);
-    // stub bw_a4: cover(2) + tail(2) = 4 (no content)
-    const bwStream = out.streams.find((s) => s.key === "bw_a4")!;
-    expect(bwStream.pageCount).toBe(4);
+    // Color stream gets its own MINIMAL cover/tail (thin band, outlined badge).
+    // No stub needed — color stream is its own boundary.
+    expect(out.streams.map((s) => s.key)).toEqual(["color_a4"]);
+    // cover(2) + content interleaved 3*2=6 + tail(2) = 10 (even)
+    expect(out.streams[0].pageCount).toBe(10);
   });
 
   it("3. one job, BW A4 duplex + Color A4 simplex → 2 streams", async () => {
@@ -90,10 +85,11 @@ describe("bundler — 10 edge cases", () => {
     });
     const keys = out.streams.map((s) => s.key).sort();
     expect(keys).toEqual(["bw_a4", "color_a4"].sort());
-    // Color stream: NO cover/tail. 3 pages + pad(1) + separator(2) = 6
+    // Both streams get their own cover+tail (color uses minimal styling).
+    // color_a4: cover(2) + 3 pages + pad(1) + tail(2) = 8
     const colorStream = out.streams.find((s) => s.key === "color_a4")!;
-    expect(colorStream.pageCount).toBe(6);
-    // BW stream: cover(2) + 7 pages + pad(1) + tail(2) = 12
+    expect(colorStream.pageCount).toBe(8);
+    // bw_a4: cover(2) + 7 pages + pad(1) + tail(2) = 12
     const bwStream = out.streams.find((s) => s.key === "bw_a4")!;
     expect(bwStream.pageCount).toBe(12);
   });

@@ -1,4 +1,5 @@
 "use client";
+import { StepIndicator } from "@/components/StepIndicator";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -179,8 +180,8 @@ export default function NewJobFilesPage() {
       </header>
 
       <section className="container py-4">
-        <span className="smallcaps text-ink/60">Step 3 of 5</span>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Upload files.</h1>
+        <StepIndicator current={3} />
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Add your files.</h1>
         <p className="text-sm text-ink/60 mt-2 font-mono">
           PDF, JPG, PNG, HEIC. Max {MAX_FILES} files / {MAX_TOTAL_PAGES} pages / 50MB each.
         </p>

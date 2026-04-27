@@ -1,4 +1,5 @@
 "use client";
+import { StepIndicator } from "@/components/StepIndicator";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
@@ -207,7 +208,7 @@ export default function NewJobReviewPage() {
       </header>
 
       <section className="container py-4">
-        <span className="smallcaps text-ink/60">Step 5 of 5</span>
+        <StepIndicator current={5} />
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Review & pay.</h1>
       </section>
 

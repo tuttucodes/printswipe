@@ -1,4 +1,5 @@
 "use client";
+import { StepIndicator } from "@/components/StepIndicator";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -148,8 +149,8 @@ export default function NewJobConfigurePage() {
       </header>
 
       <section className="container py-4">
-        <span className="smallcaps text-ink/60">Step 4 of 5</span>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Configure each file.</h1>
+        <StepIndicator current={4} />
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Tell us how to print.</h1>
       </section>
 
       <section className="container py-4">

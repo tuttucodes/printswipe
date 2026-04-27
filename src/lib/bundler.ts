@@ -200,17 +200,16 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
     // Plan all file→stream contributions for this job
     const allPlans: FileStreamPlan[] = job.files.flatMap((f) => planFileStreams(f));
 
-    const bwPlainSet = new Set<StreamKey>(
-      allPlans.filter((p) => isBwPlain(p.streamKey)).map((p) => p.streamKey)
+    const plainStreamSet = new Set<StreamKey>(
+      allPlans.filter((p) => isPlainStream(p.streamKey)).map((p) => p.streamKey)
     );
     const allStreamSet = new Set(allPlans.map((p) => p.streamKey));
 
-    // Streams this job touches. If the job has no BW plain content (e.g. all
-    // color or all poster), we synthesize a stub bw_a4 stream that carries
-    // ONLY the cover + tail — the boundary marker the merchant pairs with the
-    // colored / poster output via bin number.
+    // Streams this job touches. If the job has NO plain content (e.g. poster
+    // only), we synthesize a stub bw_a4 stream that carries ONLY cover + tail
+    // so the merchant has a paper with bin info to pair with the poster output.
     const jobStreams = new Set<StreamKey>(allStreamSet);
-    const stubBwForCover = bwPlainSet.size === 0 && allStreamSet.size > 0;
+    const stubBwForCover = plainStreamSet.size === 0 && allStreamSet.size > 0;
     if (stubBwForCover) jobStreams.add(fallbackCoverStream());
 
     for (const streamKey of jobStreams) {
@@ -222,14 +221,14 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
       const isColor = isColorPlain(streamKey);
       const isStubOnly = stubBwForCover && streamKey === fallbackCoverStream() && !allStreamSet.has(streamKey);
 
-      // ----- Cover (BW plain streams + stubs only — saves color toner) -----
-      if (isBw) {
+      // ----- Cover (every plain stream + stubs; minimal style for color) -----
+      if (isPlain) {
         const otherStreamLabels = [...allStreamSet]
           .filter((k) => k !== streamKey)
           .map((k) => humanStreamLabel(k));
 
         const fileManifestForCover = isStubOnly
-          ? mergeFileManifest(allPlans, job.files) // stub: list everything
+          ? mergeFileManifest(allPlans, job.files)
           : mergeFileManifest(
               allPlans.filter((p) => p.streamKey === streamKey),
               job.files
@@ -246,6 +245,7 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
           fileManifest: fileManifestForCover,
           otherStreams: otherStreamLabels,
           qrPayload: JSON.stringify({ token: job.token, jobId: job.id, batchId, stream: streamKey }),
+          minimal: isColor,
         });
         const coverDoc = await PDFDocument.load(coverBytes);
         const [coverPage] = await doc.copyPages(coverDoc, [0]);
@@ -281,13 +281,14 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
         }
       }
 
-      // ----- Tail (BW plain only — same toner-saving rule) -----
-      if (isBw) {
+      // ----- Tail (every plain stream gets one; minimal for color) -----
+      if (isPlain) {
         const tailBytes = await renderTailPage({
           token: job.token,
           studentName: job.studentName,
           binNumber: binAssignments[job.id] ?? 0,
           qrPayload: JSON.stringify({ token: job.token, jobId: job.id, batchId, end: true }),
+          minimal: isColor,
         });
         const tailDoc = await PDFDocument.load(tailBytes);
         const [tailPage] = await doc.copyPages(tailDoc, [0]);
@@ -295,16 +296,6 @@ export async function bundleBatch(input: BundlerInput): Promise<BundleResult> {
         if (isDuplex) addBlankPage(doc, paperSize);
 
         if (isDuplex && doc.getPageCount() % 2 !== 0) addBlankPage(doc, paperSize);
-      }
-
-      // ----- Color stream separator: blank between jobs (no cover, no tail) -----
-      // Saves color toner; merchant uses BW stream cover/tail + bin number to pair.
-      if (isColor && plansForStream.length > 0) {
-        // Pad to even sheet boundary first if duplex
-        if (isDuplex && doc.getPageCount() % 2 !== 0) addBlankPage(doc, paperSize);
-        // One blank separator (full sheet if duplex = 2 pages)
-        addBlankPage(doc, paperSize);
-        if (isDuplex) addBlankPage(doc, paperSize);
       }
 
       // Track contribution counts for the manifest

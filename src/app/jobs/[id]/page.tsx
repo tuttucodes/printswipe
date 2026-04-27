@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { TokenDisplay } from "@/components/TokenDisplay";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PriceDisplay } from "@/components/PriceDisplay";
-import { CMYKBar } from "@/components/CMYKBar";
-import { Wordmark } from "@/components/Wordmark";
-import { BottomNav } from "@/components/BottomNav";
+import { AppShell } from "@/components/AppShell";
+import { Footer } from "@/components/Footer";
 import { formatSlotIST } from "@/lib/format";
 import type { JobStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -80,14 +79,12 @@ export default async function JobDetailPage({ params }: PageProps) {
   const isTerminal = ["EXPIRED", "FAILED", "REFUNDED"].includes(job.status);
 
   return (
-    <main className="min-h-[100dvh] pb-24 md:pb-8">
-      <CMYKBar height={4} />
-      <header className="container py-6 flex items-center justify-between">
-        <Wordmark className="h-5 w-auto text-ink" />
+    <AppShell>
+      <section className="container py-3">
         <Link href="/jobs" className="smallcaps text-ink/60 hover:text-ink">
-          ← Jobs
+          ← All jobs
         </Link>
-      </header>
+      </section>
 
       <section className="container py-6 grid gap-6 md:grid-cols-2 items-start">
         {job.token ? (
@@ -229,7 +226,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         </Card>
       </section>
 
-      <BottomNav />
-    </main>
+      <Footer />
+    </AppShell>
   );
 }

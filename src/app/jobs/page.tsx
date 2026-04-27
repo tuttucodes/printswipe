@@ -3,12 +3,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BottomNav } from "@/components/BottomNav";
+import { AppShell } from "@/components/AppShell";
 import { TokenDisplay } from "@/components/TokenDisplay";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PriceDisplay } from "@/components/PriceDisplay";
-import { CMYKBar } from "@/components/CMYKBar";
-import { Wordmark } from "@/components/Wordmark";
+import { Footer } from "@/components/Footer";
 import { formatSlotIST, formatDateIST } from "@/lib/format";
 import type { JobStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -65,17 +64,12 @@ export default async function JobsPage({ searchParams }: PageProps) {
   const now = new Date();
 
   return (
-    <main className="min-h-[100dvh] pb-24 md:pb-8">
-      <CMYKBar height={4} />
-      <header className="container py-6 flex items-center justify-between">
-        <Wordmark className="h-5 w-auto text-ink" />
-        <Link href="/jobs/new/shop" className="smallcaps text-accent">
-          + New
-        </Link>
-      </header>
-
-      <section className="container py-4">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Jobs.</h1>
+    <AppShell>
+      <section className="container py-6 flex items-center justify-between gap-4">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">My jobs.</h1>
+        <Button asChild variant="accent" size="md" className="hidden sm:inline-flex">
+          <Link href="/jobs/new/shop">+ Print something</Link>
+        </Button>
       </section>
 
       <nav className="container mt-2">
@@ -113,7 +107,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
               </p>
               {tab === "upcoming" && (
                 <Button asChild variant="accent" className="mt-4">
-                  <Link href="/jobs/new/shop">Create one</Link>
+                  <Link href="/jobs/new/shop">+ Print something</Link>
                 </Button>
               )}
             </CardBody>
@@ -183,7 +177,12 @@ export default async function JobsPage({ searchParams }: PageProps) {
         )}
       </section>
 
-      <BottomNav />
-    </main>
+      <div className="sm:hidden sticky bottom-0 z-20 bg-paper hairline-t p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <Button asChild variant="accent" size="lg" className="w-full">
+          <Link href="/jobs/new/shop">+ Print something</Link>
+        </Button>
+      </div>
+      <Footer />
+    </AppShell>
   );
 }

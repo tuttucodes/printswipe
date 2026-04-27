@@ -19,6 +19,8 @@ export interface CoverInput {
   fileManifest: { filename: string; pageCount: number }[];
   otherStreams: string[];
   qrPayload: string;
+  /** Minimal-ink rendering for color streams: thin bands, hollow badge, smaller text. */
+  minimal?: boolean;
 }
 
 export interface TailInput {
@@ -26,6 +28,7 @@ export interface TailInput {
   studentName: string;
   binNumber: number;
   qrPayload: string;
+  minimal?: boolean;
 }
 
 // Covers + tails render in pure ink so color streams print covers on B&W toner.
@@ -41,7 +44,8 @@ async function pngFromQr(payload: string): Promise<Uint8Array> {
 export async function renderCoverPage(input: CoverInput): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const page = doc.addPage(PAGE_DIMS.A4);
-  drawBoundaryBands(page);
+  drawBoundaryBands(page, { minimal: input.minimal });
+  const min = !!input.minimal;
 
   const helv = await doc.embedFont(StandardFonts.Helvetica);
   const helvBold = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -85,18 +89,29 @@ export async function renderCoverPage(input: CoverInput): Promise<Uint8Array> {
     page.drawText(input.studentPhoneMasked, { x: 40, y: 352, size: 11, font: courier, color: INK });
   }
 
-  // Bin badge — black fill, white text (prints with B&W toner only)
+  // Bin badge — solid for normal, outlined for minimal (saves toner)
   const badgeY = 280, badgeH = 70, badgeW = 280, badgeX = (524 - badgeW) / 2;
-  page.drawRectangle({ x: badgeX, y: badgeY, width: badgeW, height: badgeH, color: INK });
   const binText = `BIN ${input.binNumber}`;
-  const binW = courierBold.widthOfTextAtSize(binText, 44);
-  page.drawText(binText, {
-    x: badgeX + (badgeW - binW) / 2,
-    y: badgeY + 20,
-    size: 44,
-    font: courierBold,
-    color: rgb(1, 1, 1),
-  });
+  if (min) {
+    page.drawRectangle({
+      x: badgeX, y: badgeY, width: badgeW, height: badgeH,
+      borderColor: INK, borderWidth: 1.5,
+    });
+    const binW = courierBold.widthOfTextAtSize(binText, 44);
+    page.drawText(binText, {
+      x: badgeX + (badgeW - binW) / 2,
+      y: badgeY + 20,
+      size: 44, font: courierBold, color: INK,
+    });
+  } else {
+    page.drawRectangle({ x: badgeX, y: badgeY, width: badgeW, height: badgeH, color: INK });
+    const binW = courierBold.widthOfTextAtSize(binText, 44);
+    page.drawText(binText, {
+      x: badgeX + (badgeW - binW) / 2,
+      y: badgeY + 20,
+      size: 44, font: courierBold, color: rgb(1, 1, 1),
+    });
+  }
 
   // Stream
   drawText(page, "STREAM", { x: 40, y: 250, size: 9, font: helvBold, color: INK, characterSpacing: 2.5 });
@@ -141,7 +156,7 @@ export async function renderCoverPage(input: CoverInput): Promise<Uint8Array> {
 export async function renderTailPage(input: TailInput): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const page = doc.addPage(PAGE_DIMS.A4);
-  drawBoundaryBands(page);
+  drawBoundaryBands(page, { minimal: input.minimal });
 
   const helv = await doc.embedFont(StandardFonts.Helvetica);
   const helvBold = await doc.embedFont(StandardFonts.HelveticaBold);

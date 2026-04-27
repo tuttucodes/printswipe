@@ -2,9 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { CMYKBar } from "@/components/CMYKBar";
-import { Wordmark } from "@/components/Wordmark";
-import { BottomNav } from "@/components/BottomNav";
+import { AppShell } from "@/components/AppShell";
+import { Footer } from "@/components/Footer";
 import { PriceDisplay } from "@/components/PriceDisplay";
 import { formatDateIST } from "@/lib/format";
 import { ProfileClient } from "./ProfileClient";
@@ -62,15 +61,7 @@ export default async function ProfilePage() {
   const init = initials(profile?.name ?? profile?.email ?? user.email ?? "");
 
   return (
-    <main className="min-h-[100dvh] pb-24 md:pb-8">
-      <CMYKBar height={4} />
-      <header className="container py-6 flex items-center justify-between">
-        <Wordmark className="h-5 w-auto text-ink" />
-        <Link href="/home" className="smallcaps text-ink/60 hover:text-ink">
-          ← Home
-        </Link>
-      </header>
-
+    <AppShell>
       <section className="container py-6">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 hairline bg-paper flex items-center justify-center font-mono font-bold text-xl">
@@ -127,7 +118,7 @@ export default async function ProfilePage() {
         )}
       </section>
 
-      <BottomNav />
-    </main>
+      <Footer />
+    </AppShell>
   );
 }

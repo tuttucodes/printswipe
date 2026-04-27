@@ -111,11 +111,12 @@ function layoutCells(layout: Layout, w: number, h: number): { x: number; y: numb
   }
 }
 
-/** Draw the right + top black "L" boundary bands on a portrait A4 page. */
-export function drawBoundaryBands(page: PDFPage) {
+/** Draw the right + top black "L" boundary bands on a portrait A4 page.
+ * Pass `minimal: true` for color streams to use thin bands (saves toner). */
+export function drawBoundaryBands(page: PDFPage, opts: { minimal?: boolean } = {}) {
   const w = page.getWidth();
   const h = page.getHeight();
-  const band = 71;
+  const band = opts.minimal ? 8 : 71;
   page.drawRectangle({ x: 0, y: h - band, width: w, height: band, color: rgb(0, 0, 0) });
   page.drawRectangle({ x: w - band, y: 0, width: band, height: h, color: rgb(0, 0, 0) });
 }

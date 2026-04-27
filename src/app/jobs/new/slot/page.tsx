@@ -1,4 +1,5 @@
 "use client";
+import { StepIndicator } from "@/components/StepIndicator";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -95,8 +96,8 @@ export default function NewJobSlotPage() {
       </header>
 
       <section className="container py-4">
-        <span className="smallcaps text-ink/60">Step 2 of 5</span>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Pick a slot.</h1>
+        <StepIndicator current={2} />
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Choose a time.</h1>
         {shopName && <p className="smallcaps text-ink/60 mt-1">{shopName}</p>}
       </section>
 

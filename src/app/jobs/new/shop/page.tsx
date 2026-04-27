@@ -1,4 +1,5 @@
 "use client";
+import { StepIndicator } from "@/components/StepIndicator";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -98,8 +99,8 @@ function NewJobShopInner() {
       </header>
 
       <section className="container py-4">
-        <span className="smallcaps text-ink/60">Step 1 of 5</span>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Pick a shop.</h1>
+        <StepIndicator current={1} />
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Choose a print shop.</h1>
       </section>
 
       <section className="container py-6">
