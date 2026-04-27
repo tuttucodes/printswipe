@@ -226,6 +226,17 @@ export default async function JobDetailPage({ params }: PageProps) {
         </Card>
       </section>
 
+      <section className="container py-4 flex flex-wrap gap-3">
+        <Button asChild variant="secondary">
+          <Link href={`/jobs/${job.id}/bill`}>View bill</Link>
+        </Button>
+        <Button asChild>
+          <a href={`/api/receipts/${job.id}`} target="_blank" rel="noopener noreferrer">
+            Download PDF
+          </a>
+        </Button>
+      </section>
+
       <Footer />
     </AppShell>
   );

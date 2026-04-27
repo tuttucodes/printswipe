@@ -303,7 +303,7 @@ export default function NewJobReviewPage() {
               className="w-full md:w-auto"
               disabled={!order || paying}
               onClick={onDevBypass}
-              title="Skips Razorpay — only available when DEV_PAYMENT_BYPASS=true"
+              title="Skips Razorpay — only available when PRINTSWIPE_BYPASS_PAY=true"
             >
               [DEV] Skip payment
             </Button>

@@ -160,13 +160,18 @@ export default async function JobsPage({ searchParams }: PageProps) {
                           ))}
                         </ul>
                       )}
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center justify-between gap-4 flex-wrap">
                         <PriceDisplay paise={job.total_amount_paise} size="sm" />
-                        <Button asChild size="sm" variant="secondary">
-                          <a href={`/api/receipts/${job.id}`} target="_blank" rel="noopener noreferrer">
-                            Receipt
-                          </a>
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button asChild size="sm" variant="secondary">
+                            <Link href={`/jobs/${job.id}/bill`}>View bill</Link>
+                          </Button>
+                          <Button asChild size="sm">
+                            <a href={`/api/receipts/${job.id}`} target="_blank" rel="noopener noreferrer">
+                              Download
+                            </a>
+                          </Button>
+                        </div>
                       </div>
                     </CardBody>
                   </Card>

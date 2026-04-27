@@ -13,7 +13,7 @@ export const fetchCache = "force-no-store";
 
 /**
  * DEV-ONLY shortcut for the full payment loop.
- * Enabled when DEV_PAYMENT_BYPASS=true on the server.
+ * Enabled when PRINTSWIPE_BYPASS_PAY=true on the server.
  * Skips Razorpay signature verification and marks the job SCHEDULED with a
  * synthetic order/payment id so downstream merchant flow can be tested.
  */
@@ -31,7 +31,7 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
-  if (process.env.DEV_PAYMENT_BYPASS !== "true") {
+  if (process.env.PRINTSWIPE_BYPASS_PAY !== "true") {
     return NextResponse.json({ error: "dev bypass disabled" }, { status: 403 });
   }
 
@@ -134,7 +134,7 @@ export async function POST(req: Request) {
 // Public read so the client knows whether to show the bypass button.
 export async function GET() {
   return NextResponse.json(
-    { enabled: process.env.DEV_PAYMENT_BYPASS === "true" },
+    { enabled: process.env.PRINTSWIPE_BYPASS_PAY === "true" },
     {
       headers: {
         "Cache-Control": "no-store, max-age=0, must-revalidate",

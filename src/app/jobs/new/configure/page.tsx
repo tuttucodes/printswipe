@@ -54,6 +54,7 @@ export default function NewJobConfigurePage() {
   const slotIso = useJobDraft((s) => s.slotIso);
   const files = useJobDraft((s) => s.files);
   const updateSettings = useJobDraft((s) => s.updateSettings);
+  const removeFile = useJobDraft((s) => s.removeFile);
   const [shopCfg, setShopCfg] = useState<ShopConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(files[0]?.id ?? null);
@@ -191,13 +192,26 @@ export default function NewJobConfigurePage() {
                         <span className="smallcaps text-ink/60">{open ? "Hide" : "Edit"}</span>
                       </div>
                     </button>
-                    <div className="mt-2 flex justify-end">
+                    <div className="mt-2 flex justify-end gap-2">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setPreviewId(f.id); }}
                         className="smallcaps text-ink/60 hover:text-accent transition-colors min-h-9 px-2 cursor-pointer"
                       >
                         ⌘ Preview
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Remove "${f.filename}" from this job?`)) {
+                            removeFile(f.id);
+                          }
+                        }}
+                        className="smallcaps text-status-failed hover:underline transition-colors min-h-9 px-2 cursor-pointer"
+                        aria-label={`Remove ${f.filename}`}
+                      >
+                        Remove
                       </button>
                     </div>
                   </CardHeader>
