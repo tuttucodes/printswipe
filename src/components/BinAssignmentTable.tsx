@@ -30,7 +30,7 @@ export function BinAssignmentTable({ rows }: { rows: BinRow[] }) {
               <td className="px-4 py-3 text-xs">
                 {Object.entries(r.streamContributions).map(([k, v]) => (
                   <div key={k} className="font-mono">
-                    {humanStreamLabel(k as StreamKey)} <span className="text-ink/50 num">({v.pageCount}p)</span>
+                    {humanStreamLabel(k as StreamKey)} <span className="text-ink/60 num">({v.pageCount}p)</span>
                   </div>
                 ))}
               </td>

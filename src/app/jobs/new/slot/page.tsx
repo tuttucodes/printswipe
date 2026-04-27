@@ -95,7 +95,7 @@ export default function NewJobSlotPage() {
       </header>
 
       <section className="container py-4">
-        <span className="smallcaps text-ink/50">Step 2 of 5</span>
+        <span className="smallcaps text-ink/60">Step 2 of 5</span>
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Pick a slot.</h1>
         {shopName && <p className="smallcaps text-ink/60 mt-1">{shopName}</p>}
       </section>
@@ -110,7 +110,7 @@ export default function NewJobSlotPage() {
                   onClick={() => setDayOffset(i)}
                   className={cn(
                     "block px-4 py-3 smallcaps transition-colors -mb-px",
-                    active ? "text-ink border-b-2 border-accent" : "text-ink/50 hover:text-ink"
+                    active ? "text-ink border-b-2 border-accent" : "text-ink/60 hover:text-ink"
                   )}
                 >
                   {d.label}
@@ -143,7 +143,7 @@ export default function NewJobSlotPage() {
         )}
         {slots && slots.length > 0 && (
           <>
-            <div className="flex items-center gap-4 mb-4 text-xs font-mono text-ink/50">
+            <div className="flex items-center gap-4 mb-4 text-xs font-mono text-ink/60">
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 inline-block bg-ink" /> Open
               </span>
@@ -186,7 +186,7 @@ export default function NewJobSlotPage() {
                       }
                     >
                       <div className="font-mono text-sm font-bold num">{s.label}</div>
-                      <div className="font-mono text-[10px] text-ink/50 num mt-1">
+                      <div className="font-mono text-[10px] text-ink/60 num mt-1">
                         {s.used}/{s.capacity}
                       </div>
                     </button>

@@ -12,7 +12,10 @@ const TABS = [
 export function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-paper hairline-t z-40">
+    <nav
+      aria-label="Primary"
+      className="md:hidden fixed bottom-0 left-0 right-0 bg-paper hairline-t z-40 pb-[env(safe-area-inset-bottom)]"
+    >
       <ul className="flex">
         {TABS.map((t) => {
           const active = pathname.startsWith(t.href);
@@ -20,9 +23,10 @@ export function BottomNav() {
             <li key={t.href} className="flex-1">
               <Link
                 href={t.href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "block text-center py-3 smallcaps transition-colors",
-                  active ? "text-accent" : "text-ink/50 hover:text-ink"
+                  "flex items-center justify-center min-h-12 py-3 smallcaps transition-colors",
+                  active ? "text-accent" : "text-ink/60 hover:text-ink"
                 )}
               >
                 {t.label}

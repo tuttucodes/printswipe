@@ -149,6 +149,9 @@ export function LoginClient({ campuses }: { campuses: Campus[] }) {
               <Label>Email</Label>
               <Input
                 type="email"
+                autoComplete="email"
+                inputMode="email"
+                spellCheck={false}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={`you@${campus.allowed_email_domains[0]}`}
@@ -172,10 +175,13 @@ export function LoginClient({ campuses }: { campuses: Campus[] }) {
               <Label>Code</Label>
               <Input
                 inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
                 maxLength={6}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 className="text-center text-2xl tracking-[0.5em]"
+                aria-label="6-digit verification code"
               />
             </div>
             <Button onClick={verifyOtp} disabled={busy || otp.length < 6}>
@@ -194,12 +200,14 @@ export function LoginClient({ campuses }: { campuses: Campus[] }) {
             <div className="space-y-3 mb-4">
               <div>
                 <Label>Name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" />
+                <Input autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" />
               </div>
               <div>
                 <Label>Mobile (Indian)</Label>
                 <Input
                   type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+91 9999999999"

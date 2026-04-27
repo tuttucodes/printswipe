@@ -179,7 +179,7 @@ export default function NewJobFilesPage() {
       </header>
 
       <section className="container py-4">
-        <span className="smallcaps text-ink/50">Step 3 of 5</span>
+        <span className="smallcaps text-ink/60">Step 3 of 5</span>
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Upload files.</h1>
         <p className="text-sm text-ink/60 mt-2 font-mono">
           PDF, JPG, PNG, HEIC. Max {MAX_FILES} files / {MAX_TOTAL_PAGES} pages / 50MB each.
@@ -199,7 +199,7 @@ export default function NewJobFilesPage() {
             isDragging && "bg-ink/5"
           )}
         >
-          <div className="smallcaps text-ink/50">Drop files here</div>
+          <div className="smallcaps text-ink/60">Drop files here</div>
           <p className="text-sm text-ink/60 mt-2">or</p>
           <Button
             variant="primary"
@@ -232,26 +232,26 @@ export default function NewJobFilesPage() {
         <section className="container py-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="smallcaps text-ink/70">Files ({files.length})</h2>
-            <span className="font-mono text-xs text-ink/50 num">{totalPages} pages</span>
+            <span className="font-mono text-xs text-ink/60 num">{totalPages} pages</span>
           </div>
           <ul className="grid gap-3">
             {files.map((f) => (
               <li key={f.id}>
                 <Card>
                   <CardBody className="flex items-center gap-4">
-                    <div className="w-10 h-12 hairline flex items-center justify-center font-mono text-[10px] text-ink/50 shrink-0">
+                    <div className="w-10 h-12 hairline flex items-center justify-center font-mono text-[10px] text-ink/60 shrink-0">
                       PDF
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-mono text-sm font-bold truncate">{f.filename}</div>
-                      <div className="font-mono text-xs text-ink/50 num mt-1">
+                      <div className="font-mono text-xs text-ink/60 num mt-1">
                         {f.pageCount} pages · {formatBytes(f.size)}
                         {f.storagePath ? " · uploaded" : " · uploading…"}
                       </div>
                     </div>
                     <button
                       onClick={() => removeFile(f.id)}
-                      className="smallcaps text-ink/50 hover:text-accent"
+                      className="smallcaps text-ink/60 hover:text-accent"
                       disabled={busy}
                     >
                       Remove

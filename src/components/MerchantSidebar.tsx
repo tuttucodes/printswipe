@@ -16,9 +16,9 @@ export function MerchantSidebar() {
     <aside className="hidden md:block w-56 shrink-0 hairline-r bg-paper">
       <div className="p-5 hairline-b">
         <div className="font-mono font-bold tracking-tight">PRINTSWIPE</div>
-        <div className="smallcaps text-ink/50 mt-1">Merchant</div>
+        <div className="smallcaps text-ink/60 mt-1">Merchant</div>
       </div>
-      <nav className="p-3">
+      <nav aria-label="Merchant" className="p-3">
         <ul className="space-y-1">
           {ITEMS.map((i) => {
             const active = pathname.startsWith(i.href);
@@ -26,8 +26,9 @@ export function MerchantSidebar() {
               <li key={i.href}>
                 <Link
                   href={i.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    "block px-3 py-2 text-sm transition-colors",
+                    "block px-3 py-2 text-sm transition-colors min-h-10 flex items-center",
                     active ? "bg-ink text-paper" : "hover:bg-ink/5"
                   )}
                 >

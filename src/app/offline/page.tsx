@@ -42,7 +42,7 @@ export default function OfflinePage() {
 
       <section className="container flex-1 py-12">
         <div className="max-w-md">
-          <span className="smallcaps text-ink/50">Offline</span>
+          <span className="smallcaps text-ink/60">Offline</span>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">
             You're offline.
           </h1>
@@ -82,7 +82,7 @@ export default function OfflinePage() {
         )}
       </section>
 
-      <footer className="container py-8 hairline-t mt-auto smallcaps text-ink/50">
+      <footer className="container py-8 hairline-t mt-auto smallcaps text-ink/60">
         printswipe.in
       </footer>
     </main>

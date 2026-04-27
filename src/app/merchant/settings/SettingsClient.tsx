@@ -421,7 +421,7 @@ function PricingSection({
           <div key={`${r.section}-${r.color}-${r.size}`} className="grid grid-cols-12 items-center gap-3">
             <div className="col-span-7 text-sm">{r.label}</div>
             <div className="col-span-5 flex items-center gap-2">
-              <span className="text-ink/50 font-mono">₹</span>
+              <span className="text-ink/60 font-mono">₹</span>
               <Input
                 type="number"
                 step="0.01"

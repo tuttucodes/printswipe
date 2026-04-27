@@ -86,7 +86,7 @@ export function ProfileClient({
         </CardHeader>
         <CardBody className="grid gap-4">
           <label className="grid gap-1">
-            <span className="smallcaps text-ink/50">Name</span>
+            <span className="smallcaps text-ink/60">Name</span>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -95,7 +95,7 @@ export function ProfileClient({
             />
           </label>
           <label className="grid gap-1">
-            <span className="smallcaps text-ink/50">Phone (10-digit)</span>
+            <span className="smallcaps text-ink/60">Phone (10-digit)</span>
             <Input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -105,7 +105,7 @@ export function ProfileClient({
             />
           </label>
           <div className="hairline-t pt-4">
-            <span className="smallcaps text-ink/50">Campus</span>
+            <span className="smallcaps text-ink/60">Campus</span>
             <div className="flex items-center justify-between mt-1">
               <span className="font-mono text-sm">{campusName ?? "Not set"}</span>
               <Link href="/login" className="smallcaps text-ink/60 hover:text-accent">

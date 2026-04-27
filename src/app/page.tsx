@@ -51,7 +51,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="container py-8 hairline-t mt-auto smallcaps text-ink/50 flex justify-between">
+      <footer className="container py-8 hairline-t mt-auto smallcaps text-ink/60 flex justify-between">
         <span>printswipe.in</span>
         <span>made for indian campuses</span>
       </footer>

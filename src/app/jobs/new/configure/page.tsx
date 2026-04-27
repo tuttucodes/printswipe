@@ -146,7 +146,7 @@ export default function NewJobConfigurePage() {
       </header>
 
       <section className="container py-4">
-        <span className="smallcaps text-ink/50">Step 4 of 5</span>
+        <span className="smallcaps text-ink/60">Step 4 of 5</span>
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Configure each file.</h1>
       </section>
 
@@ -173,7 +173,7 @@ export default function NewJobConfigurePage() {
                     >
                       <div className="text-left min-w-0">
                         <div className="font-mono text-sm font-bold truncate">{f.filename}</div>
-                        <div className="font-mono text-xs text-ink/50 num mt-1">
+                        <div className="font-mono text-xs text-ink/60 num mt-1">
                           {f.pageCount} pages · {f.settings.paperType === "POSTER_GLOSSY" ? "Poster" : "Plain"}{" "}
                           {f.settings.paperSize} · ×{f.settings.copies}
                         </div>
@@ -184,7 +184,7 @@ export default function NewJobConfigurePage() {
                         ) : (
                           <PriceDisplay paise={priceLine} size="sm" />
                         )}
-                        <span className="smallcaps text-ink/50">{open ? "Hide" : "Edit"}</span>
+                        <span className="smallcaps text-ink/60">{open ? "Hide" : "Edit"}</span>
                       </div>
                     </button>
                   </CardHeader>
@@ -210,7 +210,7 @@ export default function NewJobConfigurePage() {
       <div className="fixed bottom-0 left-0 right-0 bg-paper hairline-t z-30">
         <div className="container py-4 flex items-center justify-between gap-4">
           <div>
-            <span className="smallcaps text-ink/50">Estimate</span>
+            <span className="smallcaps text-ink/60">Estimate</span>
             <PriceDisplay paise={total} size="md" className="ml-3" />
           </div>
           <Button
@@ -316,7 +316,7 @@ function FileConfigEditor({ settings, duplexCapable, onChange }: FileConfigEdito
             onChange={(v) => onChange({ sides: v as Sides })}
           />
           {!duplexCapable && (
-            <p className="text-xs text-ink/50 font-mono mt-2">
+            <p className="text-xs text-ink/60 font-mono mt-2">
               This shop's printer doesn't support duplex for this stream.
             </p>
           )}
@@ -383,7 +383,7 @@ function FileConfigEditor({ settings, duplexCapable, onChange }: FileConfigEdito
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid gap-2">
-      <span className="smallcaps text-ink/50">{label}</span>
+      <span className="smallcaps text-ink/60">{label}</span>
       {children}
     </div>
   );

@@ -98,7 +98,7 @@ export default async function HomePage() {
       <section className="container py-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="smallcaps text-ink/70">Print Shops</h2>
-          <span className="font-mono text-xs text-ink/50 num">{shops.length} active</span>
+          <span className="font-mono text-xs text-ink/60 num">{shops.length} active</span>
         </div>
 
         {shops.length === 0 ? (
@@ -128,7 +128,7 @@ export default async function HomePage() {
                           className={
                             status.isOpen
                               ? "smallcaps text-status-ready border-[1.5px] border-status-ready/50 px-2 py-0.5 font-mono"
-                              : "smallcaps text-ink/50 border-[1.5px] border-ink/30 px-2 py-0.5 font-mono"
+                              : "smallcaps text-ink/60 border-[1.5px] border-ink/30 px-2 py-0.5 font-mono"
                           }
                         >
                           {status.isOpen ? "Open" : "Closed"}
@@ -137,7 +137,7 @@ export default async function HomePage() {
                     </CardHeader>
                     <CardBody className="flex-1 flex flex-col justify-between gap-4">
                       <div>
-                        <span className="smallcaps text-ink/50">Next slot</span>
+                        <span className="smallcaps text-ink/60">Next slot</span>
                         <p className="font-mono num text-base mt-1">
                           {status.isOpen ? `in ${minsToSlot} min` : `Opens at ${status.nextSlotLabel ?? "—"}`}
                         </p>

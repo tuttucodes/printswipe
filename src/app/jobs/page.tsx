@@ -93,7 +93,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
                     "block px-5 py-3 smallcaps transition-colors -mb-px",
                     active
                       ? "text-ink border-b-2 border-accent"
-                      : "text-ink/50 hover:text-ink"
+                      : "text-ink/60 hover:text-ink"
                   )}
                 >
                   {t.label}
@@ -132,7 +132,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
                           <div className="text-sm text-ink/60 mt-1">
                             {formatSlotIST(job.slot_time)}
                           </div>
-                          <div className="font-mono text-xs text-ink/50 num mt-1">
+                          <div className="font-mono text-xs text-ink/60 num mt-1">
                             {countdown(job.slot_time, now)}
                           </div>
                         </div>
@@ -149,7 +149,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="font-bold truncate">{job.shops?.name ?? "Shop"}</div>
-                          <div className="smallcaps text-ink/50 mt-1">
+                          <div className="smallcaps text-ink/60 mt-1">
                             {formatDateIST(job.slot_time)}
                           </div>
                         </div>

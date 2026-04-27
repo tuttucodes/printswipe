@@ -113,7 +113,7 @@ export default async function ProfilePage() {
                     <CardBody className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-bold truncate">{j.shops?.name ?? "Shop"}</div>
-                        <div className="smallcaps text-ink/50 mt-1">
+                        <div className="smallcaps text-ink/60 mt-1">
                           {formatDateIST(j.slot_time)}
                         </div>
                       </div>

@@ -174,27 +174,27 @@ export default async function JobDetailPage({ params }: PageProps) {
                 <CardBody>
                   <div className="font-mono text-sm font-bold truncate mb-2">{f.filename}</div>
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono text-ink/70 num">
-                    <dt className="text-ink/50">Pages</dt>
+                    <dt className="text-ink/60">Pages</dt>
                     <dd>{f.page_count}</dd>
-                    <dt className="text-ink/50">Paper</dt>
+                    <dt className="text-ink/60">Paper</dt>
                     <dd>{f.paper_type === "POSTER_GLOSSY" ? "Poster" : "Plain"} {f.paper_size}</dd>
-                    <dt className="text-ink/50">Color</dt>
+                    <dt className="text-ink/60">Color</dt>
                     <dd>{f.color_mode.replace("_", " ")}</dd>
-                    <dt className="text-ink/50">Sides</dt>
+                    <dt className="text-ink/60">Sides</dt>
                     <dd>{f.sides}</dd>
-                    <dt className="text-ink/50">Layout</dt>
+                    <dt className="text-ink/60">Layout</dt>
                     <dd>{f.layout}-up</dd>
-                    <dt className="text-ink/50">Copies</dt>
+                    <dt className="text-ink/60">Copies</dt>
                     <dd>{f.copies}</dd>
                     {f.page_range_spec && (
                       <>
-                        <dt className="text-ink/50">Range</dt>
+                        <dt className="text-ink/60">Range</dt>
                         <dd>{f.page_range_spec}</dd>
                       </>
                     )}
                     {f.color_pages_spec && (
                       <>
-                        <dt className="text-ink/50">Color pgs</dt>
+                        <dt className="text-ink/60">Color pgs</dt>
                         <dd>{f.color_pages_spec}</dd>
                       </>
                     )}
@@ -222,7 +222,7 @@ export default async function JobDetailPage({ params }: PageProps) {
             </div>
           </CardBody>
           <CardFooter>
-            <p className="text-xs text-ink/50">
+            <p className="text-xs text-ink/60">
               Need help? Contact your shop directly or email support@printswipe.in.
             </p>
           </CardFooter>

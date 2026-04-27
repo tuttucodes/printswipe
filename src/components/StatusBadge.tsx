@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import type { JobStatus } from "@/lib/types";
 
 const COLORS: Record<JobStatus, string> = {
-  PENDING_PAYMENT: "text-ink/50 border-ink/30",
+  PENDING_PAYMENT: "text-ink/60 border-ink/30",
   SCHEDULED: "text-status-scheduled border-status-scheduled/50",
   BUNDLED: "text-status-bundled border-status-bundled/50",
   PRINTED: "text-status-printed border-status-printed/50",

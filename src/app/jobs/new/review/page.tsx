@@ -166,7 +166,7 @@ export default function NewJobReviewPage() {
       </header>
 
       <section className="container py-4">
-        <span className="smallcaps text-ink/50">Step 5 of 5</span>
+        <span className="smallcaps text-ink/60">Step 5 of 5</span>
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Review & pay.</h1>
       </section>
 
@@ -201,7 +201,7 @@ export default function NewJobReviewPage() {
               <Card>
                 <CardBody>
                   <div className="font-mono text-sm font-bold truncate">{f.filename}</div>
-                  <div className="font-mono text-xs text-ink/50 num mt-1">
+                  <div className="font-mono text-xs text-ink/60 num mt-1">
                     {f.pageCount}p ·{" "}
                     {f.settings.paperType === "POSTER_GLOSSY" ? "Poster" : "Plain"}{" "}
                     {f.settings.paperSize} · {f.settings.colorMode.replace("_", " ")} ·{" "}

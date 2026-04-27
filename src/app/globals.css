@@ -18,6 +18,27 @@
     -webkit-font-smoothing: antialiased;
   }
   ::selection { background: #0A0A0A; color: #FAFAF7; }
+
+  /* Default keyboard focus ring across all interactive elements */
+  :where(button, a, [role="button"], summary, input, textarea, select):focus-visible {
+    outline: 2px solid #EF3340;
+    outline-offset: 2px;
+  }
+
+  /* Native buttons inherit pointer cursor */
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+/* Respect user preference: kill animations + transitions */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @layer components {

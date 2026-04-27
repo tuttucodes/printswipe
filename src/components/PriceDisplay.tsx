@@ -18,7 +18,7 @@ export function PriceDisplay({
   const r = (paise / 100).toFixed(2);
   return (
     <span className={cn("font-mono num font-bold tracking-tight", SIZES[size], className)}>
-      <span className="text-ink/50">₹</span>
+      <span className="text-ink/60">₹</span>
       <span>{r}</span>
     </span>
   );

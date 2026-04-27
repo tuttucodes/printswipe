@@ -53,8 +53,12 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-40 hairline bg-paper p-4 animate-fade-up">
-      <div className="smallcaps text-ink/60 mb-2">Install Printswipe</div>
+    <div
+      role="dialog"
+      aria-labelledby="install-prompt-title"
+      className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-40 hairline bg-paper p-4 animate-fade-up motion-reduce:animate-none"
+    >
+      <div id="install-prompt-title" className="smallcaps text-ink/60 mb-2">Install Printswipe</div>
       {iosHint ? (
         <p className="text-sm">Tap the Share button, then "Add to Home Screen" to install Printswipe.</p>
       ) : (
