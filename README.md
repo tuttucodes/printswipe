@@ -196,19 +196,21 @@ round_bankers(0.5) -> 0
 
 ## 6. Stack
 
-| Layer | Choice | Why |
-|---|---|---|
-| Framework | Next.js 14 (App Router) | RSC + edge-friendly routes |
-| Language | TypeScript strict | non-negotiable for money + bundler |
-| UI | Tailwind + custom token system | editorial hairline aesthetic |
-| Auth + DB + Storage | Supabase (ap-south-1) | Mumbai region for Indian users |
-| Payments | Razorpay (INR) | required for Indian merchants |
-| PDF engine | pdf-lib | portable PDF surgery |
-| Image engine | @napi-rs/canvas | fast HEIC fallback + cover renderer |
-| PWA | next-pwa | offline shell + cached past jobs |
-| QR | qrcode | cover QR payloads |
-| Forms | react-hook-form + zod | schema-validated client + server |
-| Tests | vitest | fast, native ESM |
+
+| Layer               | Choice                         | Why                                 |
+| ------------------- | ------------------------------ | ----------------------------------- |
+| Framework           | Next.js 14 (App Router)        | RSC + edge-friendly routes          |
+| Language            | TypeScript strict              | non-negotiable for money + bundler  |
+| UI                  | Tailwind + custom token system | editorial hairline aesthetic        |
+| Auth + DB + Storage | Supabase (ap-south-1)          | Mumbai region for Indian users      |
+| Payments            | Razorpay (INR)                 | required for Indian merchants       |
+| PDF engine          | pdf-lib                        | portable PDF surgery                |
+| Image engine        | @napi-rs/canvas                | fast HEIC fallback + cover renderer |
+| PWA                 | next-pwa                       | offline shell + cached past jobs    |
+| QR                  | qrcode                         | cover QR payloads                   |
+| Forms               | react-hook-form + zod          | schema-validated client + server    |
+| Tests               | vitest                         | fast, native ESM                    |
+
 
 Optional: `twilio` (5.3.6) lives as an `optionalDependencies` entry behind `FEATURE_SMS_ENABLED`.
 
@@ -228,11 +230,13 @@ A green-field deploy of `printswipe.in` from a clean GitHub repo to a live PWA a
 
 In Cloudflare → `printswipe.in` → DNS → Records, add:
 
-| Type | Name | Content | Proxy | TTL |
-|---|---|---|---|---|
-| A | `@` | `76.76.21.21` (Vercel) | Proxied (orange cloud ON) | Auto |
-| CNAME | `www` | `cname.vercel-dns.com` | Proxied | Auto |
-| TXT | `_vercel` | `vc-domain-verify=...` (from Vercel) | DNS-only | Auto |
+
+| Type  | Name      | Content                              | Proxy                     | TTL  |
+| ----- | --------- | ------------------------------------ | ------------------------- | ---- |
+| A     | `@`       | `76.76.21.21` (Vercel)               | Proxied (orange cloud ON) | Auto |
+| CNAME | `www`     | `cname.vercel-dns.com`               | Proxied                   | Auto |
+| TXT   | `_vercel` | `vc-domain-verify=...` (from Vercel) | DNS-only                  | Auto |
+
 
 Then in Cloudflare:
 
@@ -256,87 +260,53 @@ Then in Cloudflare:
 2. Local: install Supabase CLI (`brew install supabase/tap/supabase`).
 3. Link the local project: `supabase link --project-ref <ref>`.
 4. Apply migrations:
-
-   ```bash
+  ```bash
    supabase db push
-   ```
-
+  ```
 5. Seed campuses, shops, merchants, demo students:
-
-   ```bash
+  ```bash
    pnpm seed
-   ```
-
+  ```
 6. Pull keys from Supabase → Settings → API and add them to Vercel:
-
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` (server-side only, never expose to client)
-
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY` (server-side only, never expose to client)
 7. Deploy Edge Functions:
-
-   ```bash
+  ```bash
    supabase functions deploy cleanup_files --no-verify-jwt
    supabase functions deploy slot_expiry   --no-verify-jwt
-   ```
-
+  ```
 8. Schedule via Supabase dashboard → Database → **Cron**:
-
-   - Job `cleanup_files`: every 15 minutes — call the function URL with the service role bearer token.
-   - Job `slot_expiry`: every 5 minutes — call the function URL with the service role bearer token.
-
+  - Job `cleanup_files`: every 15 minutes — call the function URL with the service role bearer token.
+  - Job `slot_expiry`: every 5 minutes — call the function URL with the service role bearer token.
    Equivalent SQL via `pg_cron` + `pg_net`:
-
-   ```sql
-   select cron.schedule(
-     'cleanup_files_15m', '*/15 * * * *',
-     $$ select net.http_post(
-          url := 'https://<ref>.functions.supabase.co/cleanup_files',
-          headers := jsonb_build_object(
-            'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
-          )
-        ) $$
-   );
-
-   select cron.schedule(
-     'slot_expiry_5m', '*/5 * * * *',
-     $$ select net.http_post(
-          url := 'https://<ref>.functions.supabase.co/slot_expiry',
-          headers := jsonb_build_object(
-            'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
-          )
-        ) $$
-   );
-   ```
 
 ### 7.5 Razorpay
 
 1. Sign up at razorpay.com (test mode requires no KYC).
 2. Dashboard → Settings → **API Keys** → Generate Test Key. Copy `Key ID` and `Key Secret`.
 3. Set in Vercel:
-
-   - `RAZORPAY_KEY_ID`
-   - `RAZORPAY_KEY_SECRET`
-   - `NEXT_PUBLIC_RAZORPAY_KEY_ID` (same as `RAZORPAY_KEY_ID`)
-
+  - `RAZORPAY_KEY_ID`
+  - `RAZORPAY_KEY_SECRET`
+  - `NEXT_PUBLIC_RAZORPAY_KEY_ID` (same as `RAZORPAY_KEY_ID`)
 4. Dashboard → Settings → **Webhooks** → Add Webhook:
-
-   - URL: `https://printswipe.in/api/payment/webhook`
-   - Events: `payment.captured`, `payment.failed`, `refund.processed`
-   - Set a strong webhook secret. Copy it to Vercel as `RAZORPAY_WEBHOOK_SECRET`.
-
+  - URL: `https://printswipe.in/api/payment/webhook`
+  - Events: `payment.captured`, `payment.failed`, `refund.processed`
+  - Set a strong webhook secret. Copy it to Vercel as `RAZORPAY_WEBHOOK_SECRET`.
 5. **Going live**: complete KYC (PAN, GST, bank, business proof). Razorpay activates Live Mode → swap `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and the webhook secret with Live values. Retest end-to-end with a real INR 1 transaction before announcing.
 
 ## 8. Razorpay test cards
 
 Razorpay test mode (no KYC needed):
 
-| Outcome | Card number | Expiry | CVV |
-|---|---|---|---|
+
+| Outcome | Card number           | Expiry           | CVV             |
+| ------- | --------------------- | ---------------- | --------------- |
 | Success | `4111 1111 1111 1111` | any future MM/YY | any 3-digit CVV |
 | Failure | `4000 0000 0000 0002` | any future MM/YY | any 3-digit CVV |
+
 
 UPI test handle: `success@razorpay` (success), `failure@razorpay` (failure).
 
@@ -368,14 +338,14 @@ Once installed, the PWA opens standalone, caches static assets, and falls back t
 
 Before a shop goes live:
 
-- [ ] Verify all plain-paper printers are configured for **duplex (double-sided), long-edge** as the default.
-- [ ] Verify the printer driver setting **"Skip blank pages"** is **OFF** — Printswipe inserts blanks intentionally for duplex padding. If the driver skips them, single-sided files will smear bleed-through onto the next job's first page.
-- [ ] Confirm the printer's output direction. Face-down stacking is the standard assumption; if the printer face-up stacks, that is fine — the L-band cover/tail markers are stack-order independent, but the merchant should know the convention so bins fill in the expected direction.
-- [ ] Test print one batch end-to-end (book a demo student job, mark paid via Razorpay test card, bundle, print all streams, and verify bin assignment matches the cover token).
-- [ ] Set up the bin shelf with **numbered cubbies** matching the shop's `bin_count` (set during seed/admin config). Use bold black-on-white labels — the same typeface as the cover tokens.
-- [ ] In the merchant app → Settings → Printer Routing, confirm each stream (`bw_a4`, `color_a4`, `bw_a3`, `color_a3`, `poster_a4`, `poster_a2`) maps to the correct physical printer.
-- [ ] If the shop offers posters: load glossy stock in the poster printer's tray and confirm `poster_a4` and `poster_a2` route there (not to the plain printer).
-- [ ] Walk the merchant through the **Bundle → Print → Mark Printed → Token Lookup → Mark Collected** flow at least twice with pretend students.
+- Verify all plain-paper printers are configured for **duplex (double-sided), long-edge** as the default.
+- Verify the printer driver setting **"Skip blank pages"** is **OFF** — Printswipe inserts blanks intentionally for duplex padding. If the driver skips them, single-sided files will smear bleed-through onto the next job's first page.
+- Confirm the printer's output direction. Face-down stacking is the standard assumption; if the printer face-up stacks, that is fine — the L-band cover/tail markers are stack-order independent, but the merchant should know the convention so bins fill in the expected direction.
+- Test print one batch end-to-end (book a demo student job, mark paid via Razorpay test card, bundle, print all streams, and verify bin assignment matches the cover token).
+- Set up the bin shelf with **numbered cubbies** matching the shop's `bin_count` (set during seed/admin config). Use bold black-on-white labels — the same typeface as the cover tokens.
+- In the merchant app → Settings → Printer Routing, confirm each stream (`bw_a4`, `color_a4`, `bw_a3`, `color_a3`, `poster_a4`, `poster_a2`) maps to the correct physical printer.
+- If the shop offers posters: load glossy stock in the poster printer's tray and confirm `poster_a4` and `poster_a2` route there (not to the plain printer).
+- Walk the merchant through the **Bundle → Print → Mark Printed → Token Lookup → Mark Collected** flow at least twice with pretend students.
 
 ## 11. Known limits and v2 roadmap
 
