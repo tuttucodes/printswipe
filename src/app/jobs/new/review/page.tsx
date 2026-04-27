@@ -48,6 +48,47 @@ export default function NewJobReviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
+  const [bypassEnabled, setBypassEnabled] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/payment/dev-bypass")
+      .then((r) => r.json())
+      .then((j) => setBypassEnabled(Boolean(j?.enabled)))
+      .catch(() => {});
+  }, []);
+
+  const onDevBypass = async () => {
+    setPaying(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/payment/dev-bypass", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobDraftId: draftId,
+          shopId,
+          slotTime: slotIso,
+          files: files.map((f) => ({
+            ...f.settings,
+            filename: f.filename,
+            storagePath: f.storagePath,
+          })),
+          notes: null,
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        setError(typeof j.error === "string" ? j.error : "Bypass failed.");
+        setPaying(false);
+        return;
+      }
+      reset();
+      router.push(`/jobs/new/success?token=${encodeURIComponent(j.token)}&jobId=${encodeURIComponent(j.jobId)}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Bypass failed.");
+      setPaying(false);
+    }
+  };
 
   useEffect(() => {
     if (!shopId) router.push("/jobs/new/shop");
@@ -242,7 +283,7 @@ export default function NewJobReviewPage() {
         </Card>
       </section>
 
-      <section className="container py-6">
+      <section className="container py-6 flex flex-col gap-3 md:flex-row md:items-center">
         <Button
           variant="accent"
           size="lg"
@@ -252,6 +293,21 @@ export default function NewJobReviewPage() {
         >
           {paying ? "Opening checkout…" : order ? `Confirm & Pay ₹${(order.amount / 100).toFixed(2)}` : "Loading…"}
         </Button>
+        {bypassEnabled && (
+          <>
+            <span className="smallcaps text-ink/60 md:px-2">or</span>
+            <Button
+              variant="secondary"
+              size="lg"
+              className="w-full md:w-auto"
+              disabled={!order || paying}
+              onClick={onDevBypass}
+              title="Skips Razorpay — only available when DEV_PAYMENT_BYPASS=true"
+            >
+              [DEV] Skip payment
+            </Button>
+          </>
+        )}
       </section>
     </main>
   );
