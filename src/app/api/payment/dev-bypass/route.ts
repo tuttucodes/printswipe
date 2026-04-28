@@ -30,8 +30,16 @@ const Body = z.object({
   notes: z.string().nullable().optional(),
 });
 
+function bypassEnabled(): boolean {
+  return (
+    process.env.PRINTSWIPE_BYPASS_PAY === "true" ||
+    process.env.DEV_PAYMENT_BYPASS === "true" ||
+    process.env.NEXT_PUBLIC_PRINTSWIPE_BYPASS_PAY === "true"
+  );
+}
+
 export async function POST(req: Request) {
-  if (process.env.PRINTSWIPE_BYPASS_PAY !== "true") {
+  if (!bypassEnabled()) {
     return NextResponse.json({ error: "dev bypass disabled" }, { status: 403 });
   }
 
@@ -134,7 +142,17 @@ export async function POST(req: Request) {
 // Public read so the client knows whether to show the bypass button.
 export async function GET() {
   return NextResponse.json(
-    { enabled: process.env.PRINTSWIPE_BYPASS_PAY === "true" },
+    {
+      enabled: bypassEnabled(),
+      // expose which env name fired for diagnostics
+      via: process.env.PRINTSWIPE_BYPASS_PAY === "true"
+        ? "PRINTSWIPE_BYPASS_PAY"
+        : process.env.DEV_PAYMENT_BYPASS === "true"
+          ? "DEV_PAYMENT_BYPASS"
+          : process.env.NEXT_PUBLIC_PRINTSWIPE_BYPASS_PAY === "true"
+            ? "NEXT_PUBLIC_PRINTSWIPE_BYPASS_PAY"
+            : null,
+    },
     {
       headers: {
         "Cache-Control": "no-store, max-age=0, must-revalidate",
