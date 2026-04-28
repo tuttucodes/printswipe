@@ -29,12 +29,21 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/auth/callback") ||
     path.startsWith("/merchant/login") ||
     path.startsWith("/api/payment/webhook") ||
+    path === "/api/payment/dev-bypass" ||
+    path.startsWith("/terms") ||
+    path.startsWith("/privacy") ||
+    path.startsWith("/refunds") ||
+    path.startsWith("/contact") ||
     path.startsWith("/_next") ||
     path.startsWith("/icons") ||
     path.startsWith("/manifest") ||
     path === "/offline";
 
   if (!user && !isPublic) {
+    // API routes return 401 JSON; pages redirect to login.
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     const target = path.startsWith("/merchant") ? "/merchant/login" : "/login";
     const url = req.nextUrl.clone();
     url.pathname = target;
