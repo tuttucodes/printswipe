@@ -10,24 +10,24 @@ const LINKS = [
 
 export function Footer() {
   return (
-    <footer className="hairline-t bg-paper mt-auto">
-      <div className="container py-10 grid gap-8 md:grid-cols-3">
-        <div>
-          <div className="font-mono font-bold tracking-tight text-lg">PRINTSWIPE</div>
-          <p className="text-sm text-ink/60 mt-2 max-w-xs">
+    <footer className="bg-ink text-paper mt-auto border-t border-ink/10">
+      <div className="container py-16 grid gap-12 md:grid-cols-4">
+        <div className="md:col-span-2">
+          <div className="font-serif font-bold tracking-tight text-3xl mb-4">PrintSwipe</div>
+          <p className="text-sm text-paper/60 max-w-sm leading-relaxed">
             Skip the queue. Schedule print jobs at on-campus shops, pay online, walk in
             and collect from numbered bins.
           </p>
         </div>
 
         <nav aria-label="Legal" className="md:col-span-1">
-          <div className="smallcaps text-ink/60 mb-3">Information</div>
-          <ul className="space-y-2 text-sm">
+          <div className="text-xs font-mono text-paper/40 uppercase tracking-widest mb-4">Information</div>
+          <ul className="space-y-3 text-sm">
             {LINKS.map((l) => (
               <li key={l.href}>
                 <Link
                   href={l.href}
-                  className="hover:text-accent transition-colors min-h-11 inline-flex items-center"
+                  className="text-paper/70 hover:text-accent transition-colors"
                 >
                   {l.label}
                 </Link>
@@ -36,38 +36,36 @@ export function Footer() {
           </ul>
         </nav>
 
-        <div className="md:text-right">
-          <div className="smallcaps text-ink/60 mb-3">Reach us</div>
+        <div className="md:col-span-1">
+          <div className="text-xs font-mono text-paper/40 uppercase tracking-widest mb-4">Reach us</div>
           <a
             href="mailto:hello@printswipe.in"
-            className="text-sm font-mono hover:text-accent transition-colors break-all"
+            className="text-sm text-paper/70 hover:text-accent transition-colors break-all"
           >
             hello@printswipe.in
           </a>
         </div>
       </div>
 
-      <div className="hairline-t">
-        <CMYKBar height={4} />
-      </div>
-
-      <div className="container py-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <p className="text-xs font-mono text-ink/60 num">
-          &copy; {new Date().getFullYear()} Printswipe. All rights reserved.
-        </p>
-        <p className="text-xs font-mono text-ink/60 flex items-center gap-1.5">
-          Created with
-          <HeartIcon />
-          by{" "}
-          <a
-            href="https://kernelandoak.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-accent transition-colors underline-offset-4 hover:underline"
-          >
-            Kernel &amp; Oak
-          </a>
-        </p>
+      <div className="border-t border-paper/10">
+        <div className="container py-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <p className="text-sm text-paper/40">
+            &copy; {new Date().getFullYear()} Printswipe. All rights reserved.
+          </p>
+          <p className="text-sm text-paper/40 flex items-center gap-1.5">
+            Created with
+            <HeartIcon />
+            by{" "}
+            <a
+              href="https://kernelandoak.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-paper/70 hover:text-accent transition-colors"
+            >
+              Kernel &amp; Oak
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   );
