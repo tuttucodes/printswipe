@@ -6,69 +6,94 @@ import { useRouter } from "next/navigation";
 import { PDFDocument } from "pdf-lib";
 import { createClient } from "@/lib/supabase/client";
 import { useJobDraft, defaultSettings, makeId, type JobDraftFile } from "@/hooks/useJobDraft";
-import { Card, CardBody, CardHeader, CardFooter } from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CMYKBar } from "@/components/CMYKBar";
-import { Wordmark } from "@/components/Wordmark";
+import { AppShell } from "@/components/AppShell";
+import { Footer } from "@/components/Footer";
+import { compressImage, slowConnectionLabel } from "@/lib/imageCompress";
+import { uploadWithProgress, withConcurrency } from "@/lib/upload";
 import { cn } from "@/lib/utils";
 
 const ACCEPTED = ".pdf,.jpg,.jpeg,.png,.heic,.heif,application/pdf,image/jpeg,image/png,image/heic,image/heif";
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const MAX_PAGES_PER_PDF = 100;
 const MAX_FILES = 15;
 const MAX_TOTAL_PAGES = 500;
+const PARALLEL = 3;
 
 interface PreparedFile {
   bytes: Uint8Array;
   filename: string;
   pageCount: number;
+  originalSize: number;
+  compressedSize: number;
 }
 
-async function fileToPdfBytes(file: File): Promise<PreparedFile> {
+async function prepareFile(file: File): Promise<PreparedFile> {
   const lower = file.name.toLowerCase();
   const isHeic = lower.endsWith(".heic") || lower.endsWith(".heif") || file.type.includes("heic") || file.type.includes("heif");
+  const originalSize = file.size;
 
+  // PDF — re-save with object streams to shrink + strip metadata
   if (file.type === "application/pdf" || lower.endsWith(".pdf")) {
     const buf = new Uint8Array(await file.arrayBuffer());
-    if (buf.byteLength > MAX_FILE_SIZE) {
-      throw new Error(`${file.name}: exceeds 50MB.`);
-    }
+    if (buf.byteLength > MAX_FILE_SIZE) throw new Error(`${file.name}: exceeds 50MB.`);
     const doc = await PDFDocument.load(buf, { ignoreEncryption: false }).catch((e: unknown) => {
-      const msg = e instanceof Error ? e.message : "Cannot read PDF";
-      throw new Error(`${file.name}: ${msg}`);
+      throw new Error(`${file.name}: ${e instanceof Error ? e.message : "Cannot read PDF"}`);
     });
-    if (doc.isEncrypted) {
-      throw new Error(`${file.name}: Encrypted PDFs not supported.`);
-    }
+    if (doc.isEncrypted) throw new Error(`${file.name}: Encrypted PDFs not supported.`);
     const pageCount = doc.getPageCount();
     if (pageCount > MAX_PAGES_PER_PDF) {
       throw new Error(`${file.name}: ${pageCount} pages exceeds limit (${MAX_PAGES_PER_PDF}).`);
     }
-    return { bytes: buf, filename: file.name, pageCount };
+    doc.setTitle(file.name);
+    doc.setAuthor("");
+    doc.setSubject("");
+    doc.setKeywords([]);
+    doc.setProducer("Printswipe");
+    doc.setCreator("Printswipe");
+    const optimized = await doc.save({ useObjectStreams: true });
+    return {
+      bytes: optimized,
+      filename: file.name,
+      pageCount,
+      originalSize,
+      compressedSize: optimized.byteLength,
+    };
   }
 
-  // Image: convert HEIC if needed, then wrap in single-page PDF
+  // Image — convert HEIC, compress, embed in 1-page PDF
   let imageBlob: Blob = file;
   let outName = file.name;
   if (isHeic) {
     const heic2any = (await import("heic2any")).default;
-    const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.92 });
+    const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.85 });
     imageBlob = Array.isArray(converted) ? converted[0] : converted;
     outName = outName.replace(/\.(heic|heif)$/i, ".jpg");
   }
+
+  imageBlob = await compressImage(imageBlob, { maxWidth: 2480, maxHeight: 3508, quality: 0.85 });
+
   if (imageBlob.size > MAX_FILE_SIZE) {
-    throw new Error(`${file.name}: image exceeds 50MB.`);
+    throw new Error(`${file.name}: image still exceeds 50MB after compression.`);
   }
   const buf = new Uint8Array(await imageBlob.arrayBuffer());
   const pdf = await PDFDocument.create();
-  const isJpg =
-    imageBlob.type === "image/jpeg" || outName.toLowerCase().endsWith(".jpg") || outName.toLowerCase().endsWith(".jpeg");
+  pdf.setProducer("Printswipe");
+  pdf.setCreator("Printswipe");
+  const isJpg = imageBlob.type === "image/jpeg";
   const img = isJpg ? await pdf.embedJpg(buf) : await pdf.embedPng(buf);
   const page = pdf.addPage([img.width, img.height]);
   page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
-  const pdfBytes = await pdf.save();
+  const pdfBytes = await pdf.save({ useObjectStreams: true });
   const finalName = outName.replace(/\.(jpg|jpeg|png)$/i, ".pdf");
-  return { bytes: pdfBytes, filename: finalName, pageCount: 1 };
+  return {
+    bytes: pdfBytes,
+    filename: finalName,
+    pageCount: 1,
+    originalSize,
+    compressedSize: pdfBytes.byteLength,
+  };
 }
 
 export default function NewJobFilesPage() {
@@ -85,12 +110,17 @@ export default function NewJobFilesPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [slowNet, setSlowNet] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!shopId) router.push("/jobs/new/shop");
     else if (!slotIso) router.push("/jobs/new/slot");
   }, [shopId, slotIso, router]);
+
+  useEffect(() => {
+    setSlowNet(slowConnectionLabel());
+  }, []);
 
   const totalPages = files.reduce((s, f) => s + f.pageCount, 0);
 
@@ -111,44 +141,71 @@ export default function NewJobFilesPage() {
         setError("Not signed in.");
         return;
       }
-      for (const f of list) {
-        let prepared: PreparedFile;
-        try {
-          prepared = await fileToPdfBytes(f);
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Failed to read file.");
-          continue;
-        }
-        if (totalPages + prepared.pageCount > MAX_TOTAL_PAGES) {
-          setError(`Total pages would exceed ${MAX_TOTAL_PAGES}.`);
-          continue;
-        }
-        const id = makeId();
-        const draftFile: JobDraftFile = {
+
+      const stubs = list.map((f) => ({ id: makeId(), file: f }));
+
+      // Add stubs immediately so the user sees rows + progress bars
+      stubs.forEach(({ id, file }) => {
+        addFile({
           id,
-          filename: prepared.filename,
-          pageCount: prepared.pageCount,
-          size: prepared.bytes.byteLength,
+          filename: file.name,
+          pageCount: 0,
+          size: file.size,
           storagePath: null,
           uploadProgress: 0,
-          settings: defaultSettings(prepared.pageCount),
-        };
-        addFile(draftFile);
-        const path = `${user.id}/${draftId}/${id}-${prepared.filename.replace(/[^\w.\-]/g, "_")}`;
-        const { error: upErr } = await sb.storage
-          .from("job-files")
-          .upload(path, prepared.bytes, {
+          settings: defaultSettings(1),
+        });
+      });
+
+      let runningTotal = totalPages;
+      const errs: string[] = [];
+
+      await withConcurrency(stubs, PARALLEL, async ({ id, file }) => {
+        try {
+          const prepared = await prepareFile(file);
+          if (runningTotal + prepared.pageCount > MAX_TOTAL_PAGES) {
+            errs.push(`${file.name}: total pages would exceed ${MAX_TOTAL_PAGES}.`);
+            removeFile(id);
+            return;
+          }
+          runningTotal += prepared.pageCount;
+
+          updateFileProgress(id, 5);
+
+          const path = `${user.id}/${draftId}/${id}-${prepared.filename.replace(/[^\w.\-]/g, "_")}`;
+          const { error: upErr } = await uploadWithProgress({
+            bucket: "job-files",
+            path,
+            bytes: prepared.bytes,
             contentType: "application/pdf",
-            upsert: false,
+            onProgress: (pct) => updateFileProgress(id, pct),
           });
-        if (upErr) {
-          setError(`Upload failed for ${prepared.filename}: ${upErr.message}`);
+          if (upErr) {
+            errs.push(`${prepared.filename}: ${upErr}`);
+            removeFile(id);
+            return;
+          }
+
+          // Replace the stub with the real, parsed entry (atomic via remove+add)
           removeFile(id);
-          continue;
+          const draftFile: JobDraftFile = {
+            id,
+            filename: prepared.filename,
+            pageCount: prepared.pageCount,
+            size: prepared.compressedSize,
+            storagePath: path,
+            uploadProgress: 100,
+            settings: defaultSettings(prepared.pageCount),
+          };
+          addFile(draftFile);
+          updateFileStoragePath(id, path);
+        } catch (e) {
+          errs.push(e instanceof Error ? e.message : `${file.name}: failed.`);
+          removeFile(id);
         }
-        updateFileStoragePath(id, path);
-        updateFileProgress(id, 100);
-      }
+      });
+
+      if (errs.length) setError(errs.join(" · "));
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -170,22 +227,32 @@ export default function NewJobFilesPage() {
   const allUploaded = files.length > 0 && files.every((f) => f.storagePath !== null);
 
   return (
-    <main className="min-h-[100dvh] pb-12">
-      <CMYKBar height={4} />
-      <header className="container py-6 flex items-center justify-between">
-        <Wordmark className="h-5 w-auto text-ink" />
+    <AppShell>
+      <section className="container py-3">
         <Link href="/jobs/new/slot" className="smallcaps text-ink/60 hover:text-ink">
           ← Back
         </Link>
-      </header>
+      </section>
 
-      <section className="container py-4">
+      <section className="container py-2">
         <StepIndicator current={3} />
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-2">Add your files.</h1>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-3">Add your files.</h1>
         <p className="text-sm text-ink/60 mt-2 font-mono">
           PDF, JPG, PNG, HEIC. Max {MAX_FILES} files / {MAX_TOTAL_PAGES} pages / 50MB each.
         </p>
       </section>
+
+      {slowNet && (
+        <section className="container py-2">
+          <div className="hairline border-status-bundled bg-paper p-3 text-sm">
+            <div className="smallcaps text-status-bundled mb-1">Heads up</div>
+            <p className="text-ink/80">
+              {slowNet}. We compress images before upload to save data, but this can still take a
+              while. Stay on this screen until uploads finish.
+            </p>
+          </div>
+        </section>
+      )}
 
       <section className="container py-4">
         <div
@@ -196,7 +263,7 @@ export default function NewJobFilesPage() {
           onDragLeave={() => setIsDragging(false)}
           onDrop={onDrop}
           className={cn(
-            "hairline bg-paper p-10 text-center transition-colors",
+            "hairline bg-paper p-8 sm:p-10 text-center transition-colors",
             isDragging && "bg-ink/5"
           )}
         >
@@ -210,6 +277,9 @@ export default function NewJobFilesPage() {
           >
             {busy ? "Processing…" : "Browse files"}
           </Button>
+          <p className="text-xs text-ink/60 mt-3 font-mono">
+            Up to {PARALLEL} files in parallel · images auto-compressed
+          </p>
           <input
             ref={inputRef}
             type="file"
@@ -223,7 +293,7 @@ export default function NewJobFilesPage() {
         {error && (
           <Card className="mt-4">
             <CardBody>
-              <p className="text-accent font-mono text-sm">{error}</p>
+              <p className="text-status-failed font-mono text-sm whitespace-pre-line">{error}</p>
             </CardBody>
           </Card>
         )}
@@ -236,31 +306,46 @@ export default function NewJobFilesPage() {
             <span className="font-mono text-xs text-ink/60 num">{totalPages} pages</span>
           </div>
           <ul className="grid gap-3">
-            {files.map((f) => (
-              <li key={f.id}>
-                <Card>
-                  <CardBody className="flex items-center gap-4">
-                    <div className="w-10 h-12 hairline flex items-center justify-center font-mono text-[10px] text-ink/60 shrink-0">
-                      PDF
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-mono text-sm font-bold truncate">{f.filename}</div>
-                      <div className="font-mono text-xs text-ink/60 num mt-1">
-                        {f.pageCount} pages · {formatBytes(f.size)}
-                        {f.storagePath ? " · uploaded" : " · uploading…"}
+            {files.map((f) => {
+              const pct = f.uploadProgress ?? 0;
+              const done = f.storagePath !== null;
+              return (
+                <li key={f.id}>
+                  <Card>
+                    <CardBody className="space-y-2">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-12 hairline flex items-center justify-center font-mono text-[10px] text-ink/60 shrink-0">
+                          PDF
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-mono text-sm font-bold truncate">{f.filename}</div>
+                          <div className="font-mono text-xs text-ink/60 num mt-1">
+                            {f.pageCount > 0 ? `${f.pageCount} pages · ` : ""}
+                            {formatBytes(f.size)}
+                            {done ? " · uploaded" : pct > 0 ? ` · ${pct}%` : " · preparing…"}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeFile(f.id)}
+                          className="smallcaps text-ink/60 hover:text-status-failed transition-colors"
+                          aria-label={`Remove ${f.filename}`}
+                        >
+                          Remove
+                        </button>
                       </div>
-                    </div>
-                    <button
-                      onClick={() => removeFile(f.id)}
-                      className="smallcaps text-ink/60 hover:text-accent"
-                      disabled={busy}
-                    >
-                      Remove
-                    </button>
-                  </CardBody>
-                </Card>
-              </li>
-            ))}
+                      {!done && (
+                        <div className="h-1 bg-ink/10 overflow-hidden" aria-label="Upload progress">
+                          <div
+                            className="h-full bg-accent transition-[width]"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      )}
+                    </CardBody>
+                  </Card>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
@@ -276,6 +361,8 @@ export default function NewJobFilesPage() {
           Continue
         </Button>
       </section>
-    </main>
+
+      <Footer />
+    </AppShell>
   );
 }
