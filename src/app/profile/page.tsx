@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/AppShell";
 import { Footer } from "@/components/Footer";
 import { PriceDisplay } from "@/components/PriceDisplay";
+import { StatusBadge } from "@/components/StatusBadge";
 import { formatDateIST } from "@/lib/format";
+import type { JobStatus } from "@/lib/types";
 import { ProfileClient } from "./ProfileClient";
 
 interface ProfileRow {
@@ -19,10 +22,13 @@ interface ProfileRow {
   campuses: { name: string } | null;
 }
 
-interface RecentJob {
+interface OrderRow {
   id: string;
+  token: string | null;
+  status: JobStatus;
   total_amount_paise: number;
   slot_time: string;
+  bin_number: number | null;
   shops: { name: string } | null;
 }
 
@@ -49,13 +55,22 @@ export default async function ProfilePage() {
 
   const profile = profileData as unknown as ProfileRow | null;
 
-  const { data: jobsData } = await sb
+  const { data: ordersData } = await sb
     .from("jobs")
-    .select("id, total_amount_paise, slot_time, shops(name)")
+    .select("id, token, status, total_amount_paise, slot_time, bin_number, shops(name)")
     .order("slot_time", { ascending: false })
-    .limit(10);
+    .limit(20);
 
-  const recentJobs = (jobsData ?? []) as unknown as RecentJob[];
+  const orders = (ordersData ?? []) as unknown as OrderRow[];
+
+  // Stats
+  const totalSpent = orders
+    .filter((o) => !["FAILED", "REFUNDED", "EXPIRED", "PENDING_PAYMENT"].includes(o.status))
+    .reduce((s, o) => s + o.total_amount_paise, 0);
+  const completed = orders.filter((o) => o.status === "COLLECTED").length;
+  const upcoming = orders.filter((o) =>
+    ["SCHEDULED", "BUNDLED", "PRINTED", "READY"].includes(o.status)
+  ).length;
 
   const display = profile?.name ?? profile?.email ?? user.email ?? "User";
   const init = initials(profile?.name ?? profile?.email ?? user.email ?? "");
@@ -67,11 +82,17 @@ export default async function ProfilePage() {
           <div className="w-16 h-16 hairline bg-paper flex items-center justify-center font-mono font-bold text-xl">
             {init}
           </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{display}</h1>
-            <p className="text-sm text-ink/60 mt-1 font-mono">{profile?.email ?? user.email}</p>
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate">{display}</h1>
+            <p className="text-sm text-ink/60 mt-1 font-mono truncate">{profile?.email ?? user.email}</p>
           </div>
         </div>
+      </section>
+
+      <section className="container py-4 grid grid-cols-3 gap-3">
+        <Stat label="Upcoming" value={String(upcoming)} />
+        <Stat label="Completed" value={String(completed)} />
+        <Stat label="Total spent" value={<PriceDisplay paise={totalSpent} size="sm" />} />
       </section>
 
       <section className="container py-4">
@@ -85,33 +106,66 @@ export default async function ProfilePage() {
       </section>
 
       <section className="container py-6">
-        <h2 className="smallcaps text-ink/70 mb-3">Recent Receipts</h2>
-        {recentJobs.length === 0 ? (
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="smallcaps text-ink/70">Orders &amp; bills</h2>
+          {orders.length > 0 && (
+            <Link href="/jobs" className="smallcaps text-accent">
+              See all →
+            </Link>
+          )}
+        </div>
+
+        {orders.length === 0 ? (
           <Card>
-            <CardBody className="text-center py-8 text-ink/60">No receipts yet.</CardBody>
+            <CardBody className="text-center py-10 space-y-3">
+              <p className="font-bold">No orders yet.</p>
+              <p className="text-sm text-ink/60">Your bills and tokens will appear here.</p>
+              <Button asChild variant="accent">
+                <Link href="/jobs/new/shop">+ Print something</Link>
+              </Button>
+            </CardBody>
           </Card>
         ) : (
-          <ul className="grid gap-2">
-            {recentJobs.map((j) => (
-              <li key={j.id}>
-                <a
-                  href={`/api/receipts/${j.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  <Card className="hover:bg-ink/[0.02] transition-colors">
-                    <CardBody className="flex items-center justify-between gap-3">
+          <ul className="grid gap-3">
+            {orders.map((o) => (
+              <li key={o.id}>
+                <Card>
+                  <CardBody className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="font-bold truncate">{j.shops?.name ?? "Shop"}</div>
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          {o.token && (
+                            <span className="font-mono font-bold text-base">{o.token}</span>
+                          )}
+                          <StatusBadge status={o.status} />
+                        </div>
+                        <div className="font-bold truncate">{o.shops?.name ?? "Shop"}</div>
                         <div className="smallcaps text-ink/60 mt-1">
-                          {formatDateIST(j.slot_time)}
+                          {formatDateIST(o.slot_time)}
+                          {o.bin_number ? ` · Bin ${o.bin_number}` : ""}
                         </div>
                       </div>
-                      <PriceDisplay paise={j.total_amount_paise} size="sm" />
-                    </CardBody>
-                  </Card>
-                </a>
+                      <PriceDisplay paise={o.total_amount_paise} size="sm" className="shrink-0" />
+                    </div>
+                    <div className="flex flex-wrap gap-2 hairline-t pt-3">
+                      <Button asChild size="sm" variant="secondary">
+                        <Link href={`/jobs/${o.id}`}>Details</Link>
+                      </Button>
+                      <Button asChild size="sm" variant="secondary">
+                        <Link href={`/jobs/${o.id}/bill`}>View bill</Link>
+                      </Button>
+                      <Button asChild size="sm">
+                        <a
+                          href={`/api/receipts/${o.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Download PDF
+                        </a>
+                      </Button>
+                    </div>
+                  </CardBody>
+                </Card>
               </li>
             ))}
           </ul>
@@ -120,5 +174,14 @@ export default async function ProfilePage() {
 
       <Footer />
     </AppShell>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="hairline p-3">
+      <div className="smallcaps text-ink/60">{label}</div>
+      <div className="font-mono font-bold text-xl num mt-1">{value}</div>
+    </div>
   );
 }
