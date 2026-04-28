@@ -12,6 +12,8 @@ import { CMYKBar } from "@/components/CMYKBar";
 import { Wordmark } from "@/components/Wordmark";
 import { PriceDisplay } from "@/components/PriceDisplay";
 import { formatSlotIST } from "@/lib/format";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle2 } from "lucide-react";
 
 interface OrderResponse {
   orderId: string;
@@ -49,6 +51,7 @@ export default function NewJobReviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [bypassEnabled, setBypassEnabled] = useState(false);
 
   useEffect(() => {
@@ -83,8 +86,11 @@ export default function NewJobReviewPage() {
         setPaying(false);
         return;
       }
+      setPaymentSuccess(true);
       reset();
-      router.push(`/jobs/new/success?token=${encodeURIComponent(j.token)}&jobId=${encodeURIComponent(j.jobId)}`);
+      setTimeout(() => {
+        router.push(`/jobs/new/success?token=${encodeURIComponent(j.token)}&jobId=${encodeURIComponent(j.jobId)}`);
+      }, 2000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Bypass failed.");
       setPaying(false);
@@ -182,8 +188,11 @@ export default function NewJobReviewPage() {
             return;
           }
           const token = j.token as string;
+          setPaymentSuccess(true);
           reset();
-          router.push(`/jobs/new/success?token=${encodeURIComponent(token)}&jobId=${encodeURIComponent(j.jobId)}`);
+          setTimeout(() => {
+            router.push(`/jobs/new/success?token=${encodeURIComponent(token)}&jobId=${encodeURIComponent(j.jobId)}`);
+          }, 2000);
         } catch (e) {
           setError(e instanceof Error ? e.message : "Verification failed.");
           setPaying(false);
@@ -310,6 +319,34 @@ export default function NewJobReviewPage() {
           </>
         )}
       </section>
+
+      <AnimatePresence>
+        {paymentSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-paper/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", bounce: 0.5 }}
+              className="flex flex-col items-center p-8 bg-ink rounded-3xl shadow-glass-md text-paper"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", bounce: 0.6 }}
+              >
+                <CheckCircle2 className="w-16 h-16 text-accent mb-4" />
+              </motion.div>
+              <h2 className="text-2xl font-serif font-bold mb-2">Payment Confirmed!</h2>
+              <p className="text-paper/70 text-sm">Getting your print job ready...</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
